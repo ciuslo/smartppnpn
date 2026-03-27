@@ -1,1 +1,7 @@
-node_modules
+.env.local
+
+# Dependency directories
+node_modules/
+
+# Next.js build output
+.next/

@@ -508,7 +508,7 @@ export default function ApprovalCutiPage() {
       </div>
 
       <h1 className="text-3xl font-bold mt-2">
-        Persetujuan Cuti Pegawai ({approverRole === 'kasubbag' ? 'Kasubbag' : 'Kepala Kantor'})
+        Persetujuan Cuti Pegawai
       </h1>
 
       {/* ================= TABEL PENDING (Rata Tengah + Sisa Cuti Realtime + Cuti Sakit) ================= */}

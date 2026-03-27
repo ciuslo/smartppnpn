@@ -81,7 +81,7 @@ export async function middleware(request: NextRequest) {
   // ==============================
   // 🎯 ROLE MAPPING
   // ==============================
-  const adminRoles = ['admin', 'kepala_kantor', 'kasubag']
+  const adminRoles = ['admin', 'kepala_kantor', 'kasubbag']
   const userRoles = ['pegawai']
 
   const isAdmin = adminRoles.includes(role || '')
@@ -99,25 +99,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // ==============================
-  // 🔒 PROTEKSI DASHBOARD ADMIN
-  // ==============================
-  if (url.pathname.startsWith('/dashboardadmin')) {
-    if (isUser) {
-      url.pathname = '/dashboard'
-      return NextResponse.redirect(url)
-    }
-  }
+  // // ==============================
+  // // 🔒 PROTEKSI DASHBOARD ADMIN
+  // // ==============================
+  // if (url.pathname.startsWith('/dashboardadmin')) {
+  //   if (isUser) {
+  //     url.pathname = '/dashboard'
+  //     return NextResponse.redirect(url)
+  //   }
+  // }
 
-  // ==============================
-  // 🔒 PROTEKSI DASHBOARD USER
-  // ==============================
-  if (url.pathname.startsWith('/dashboard')) {
-    if (isAdmin) {
-      url.pathname = '/dashboardadmin'
-      return NextResponse.redirect(url)
-    }
-  }
+  // // ==============================
+  // // 🔒 PROTEKSI DASHBOARD USER
+  // // ==============================
+  // if (url.pathname.startsWith('/dashboard')) {
+  //   if (isAdmin) {
+  //     url.pathname = '/dashboardadmin'
+  //     return NextResponse.redirect(url)
+  //   }
+  // }
 
   return response
 }

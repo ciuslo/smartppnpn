@@ -118,7 +118,7 @@ export default function DashboardAdmin() {
         .single()
 
       // 🔥 RBAC CHECK
-      const allowedRoles = ['admin', 'kepala_kantor', 'kasubag']
+      const allowedRoles = ['admin', 'kepala_kantor', 'kasubbag']
       if (!allowedRoles.includes(profile?.role)) {
         router.replace('/dashboard')
         return

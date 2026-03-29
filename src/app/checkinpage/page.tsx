@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 const OFFICE_LOCATION = {
   latitude: 5.179003,
   longitude: 97.149272,
-  RADIUS_M: 200,
+  RADIUS_M: 2000,
 };
 
 const WIB_OFFSET = 7 * 60 * 60 * 1000;

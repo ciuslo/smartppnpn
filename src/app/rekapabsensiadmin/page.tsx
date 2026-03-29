@@ -65,7 +65,7 @@ type MatrixRow = {
   | 'H' | '2x' | 'T' | '2T¹' | '2T²'
   | 'I' | 'IP' | 'IP½'
   | 'C' | 'S' | 'A' | '½' | 'L' | '-'
-  | 'LAM' | 'LAM(P)' | 'LAP' | 'LAP(P)'
+  | 'LAM' | 'LAM(P)' | 'LAP' | 'LAP(P)' | 'P' | 'F'
  
     color: string
     isHoliday: boolean
@@ -241,186 +241,165 @@ export default function RekapAbsensiMatrix() {
     return format(d, 'HH:mm')
   }
   // 3. CORE LOGIC
-  const matrixData = useMemo(() => {
-    let filteredProfiles = profiles
-    if (searchName.trim()) {
-      filteredProfiles = profiles.filter(p => 
-        p.full_name?.toLowerCase().includes(searchName.toLowerCase())
-      )
-    }
-    if (!filteredProfiles.length) return []
-
-    const daysCount = getDaysInMonth(new Date(year, month))
-    const daysArray = Array.from({ length: daysCount }, (_, i) => i + 1)
-    const today = startOfDay(new Date()) 
-
-    return filteredProfiles.map((profile, index) => {
-      const rowData: MatrixRow['days'] = []
-      let stats = { H: 0, Sft: 0, T: 0, I: 0, IP: 0, C: 0, S: 0, A: 0, Half: 0 }
-      const remainingLeave = quotaMap.has(profile.id) ? quotaMap.get(profile.id)! : null
-
-      daysArray.forEach(day => {
-        const dateObj = new Date(year, month, day)
-        const dateStr = format(dateObj, 'yyyy-MM-dd')
-        const key = `${profile.id}_${dateStr}`
-        
-        const holidayName = holidayMap[dateStr] 
-        const isWeekend = isSunday(dateObj) || isSaturday(dateObj)
-        const isOffDay = isWeekend || !!holidayName 
-        
-        let code: MatrixRow['days'][0]['code'] = '-'
-        let color = 'bg-white'
-        let tooltip = ''
-
-        if (permissionMap.has(key)) {
-  const perm = permissionMap.get(key)!
-  const izinType = perm.jenisIzin.toUpperCase()
-
-  // =========================
-  // LAM / LAP MENIMPA TERLAMBAT
-  // =========================
-  if (izinType.includes('LUPA ABSEN MASUK')) {
-    if (perm.potongGaji) {
-      code = 'LAM(P)'
-      color = 'bg-emerald-300 text-white-900 font-bold'
-      tooltip = 'Lupa Absen Masuk (Potong Gaji)'
-      stats.IP++
-    } else {
-      code = 'LAM'
-      color = 'bg-pink-200 text-emerald-800 font-bold'
-      tooltip = 'Lupa Absen Masuk (Tidak Potong Gaji)'
-      stats.I++
-    }
+ const matrixData = useMemo(() => {
+  let filteredProfiles = profiles
+  if (searchName.trim()) {
+    filteredProfiles = profiles.filter(p =>
+      p.full_name?.toLowerCase().includes(searchName.toLowerCase())
+    )
   }
-  else if (izinType.includes('LUPA ABSEN PULANG')) {
-    if (perm.potongGaji) {
-      code = 'LAP(P)'
-      color = 'bg-maroon-300 text-emerald-900 font-bold'
-      tooltip = 'Lupa Absen Pulang (Potong Gaji)'
-      stats.IP++
-    } else {
-      code = 'LAP'
-      color = 'bg-sky-200 text-sky-800 font-bold'
-      tooltip = 'Lupa Absen Pulang (Tidak Potong Gaji)'
-      stats.I++
-    }
-  }
-  // =========================
-  // IZIN NORMAL
-  // =========================
-  else {
-    if (perm.potongGaji) {
-      if (perm.halfDay) {
-        code = 'IP½'
-        color = 'bg-rose-200 text-rose-800 border-rose-300'
-        tooltip = 'Izin Potong Gaji (Setengah Hari)'
-        stats.IP++
-      } else {
-        code = 'IP'
-        color = 'bg-rose-300 text-rose-900 border-rose-400'
-        tooltip = 'Izin Potong Gaji (Full)'
-        stats.IP++
-      }
-    } else {
-      code = 'I'
-      color = 'bg-yellow-200 text-yellow-800'
-      tooltip = 'Izin (Tidak Potong Gaji)'
-      stats.I++
-    }
-  }
-}
+  if (!filteredProfiles.length) return []
 
-        else if (leaveMap.has(key)) {
-            const info = leaveMap.get(key)!
-            if (info.half_day) { code = '½'; color = 'bg-purple-200 text-purple-800'; tooltip = 'Cuti Setengah Hari'; stats.Half++ }
-            else if (info.type.toLowerCase().includes('sakit')) { code = 'S'; color = 'bg-orange-200 text-orange-800'; tooltip = `Sakit: ${info.type}`; stats.S++ }
-            else { code = 'C'; color = 'bg-blue-200 text-blue-800'; tooltip = `Cuti: ${info.type}`; stats.C++ }
-        }
-        else if (attendanceMap.has(key)) {
-          const shifts = attendanceMap.get(key) || []
-          let dayLateCount = 0
-          let tooltipLines: string[] = []
+  const daysCount = getDaysInMonth(new Date(year, month))
+  const daysArray = Array.from({ length: daysCount }, (_, i) => i + 1)
+  const today = startOfDay(new Date())
 
-          const userPos = profile.position?.toUpperCase() || ''
+  return filteredProfiles.map((profile, index) => {
+    const rowData: MatrixRow['days'] = []
+    let stats = { H: 0, Sft: 0, T: 0, I: 0, IP: 0, C: 0, S: 0, A: 0, Half: 0 }
+    const remainingLeave = quotaMap.has(profile.id) ? quotaMap.get(profile.id)! : null
 
-          shifts.forEach((s, idx) => {
-            const checkInDate = new Date(s.checkIn)
-            const hours = checkInDate.getHours()
-            const minutes = checkInDate.getMinutes()
-            const totalMinutes = hours * 60 + minutes
+    daysArray.forEach(day => {
+      const dateObj = new Date(year, month, day)
+      const dateStr = format(dateObj, 'yyyy-MM-dd')
+      const key = `${profile.id}_${dateStr}`
 
-            let lockHour, lockMin
+      const holidayName = holidayMap[dateStr]
+      const isWeekend = isSunday(dateObj) || isSaturday(dateObj)
+      const isOffDay = isWeekend || !!holidayName
 
-            if ((s.shift || '').toLowerCase().includes('pagi')) {
-              if (userPos.includes('SATPAM')) [lockHour, lockMin] = [7, 5]
-              else if (userPos.includes('CS')) [lockHour, lockMin] = [7, 30]
-              else [lockHour, lockMin] = [8, 0]
+      let code: MatrixRow['days'][0]['code'] = '-'
+      let color = 'bg-white'
+      let tooltip = ''
+
+      // ===== PERMISSION & LAM / LAP =====
+      if (permissionMap.has(key)) {
+        const perm = permissionMap.get(key)!
+        const izinType = perm.jenisIzin.toUpperCase()
+
+        if (izinType.includes('LUPA ABSEN MASUK')) {
+          if (perm.potongGaji) {
+            code = 'LAM(P)'
+            color = 'bg-emerald-300 text-white-900 font-bold'
+            tooltip = 'Lupa Absen Masuk (Potong Gaji)'
+            stats.IP++
+          } else {
+            code = 'LAM'
+            color = 'bg-pink-200 text-emerald-800 font-bold'
+            tooltip = 'Lupa Absen Masuk (Tidak Potong Gaji)'
+            stats.I++
+          }
+        } else if (izinType.includes('LUPA ABSEN PULANG')) {
+          if (perm.potongGaji) {
+            code = 'LAP(P)'
+            color = 'bg-maroon-300 text-emerald-900 font-bold'
+            tooltip = 'Lupa Absen Pulang (Potong Gaji)'
+            stats.IP++
+          } else {
+            code = 'LAP'
+            color = 'bg-sky-200 text-sky-800 font-bold'
+            tooltip = 'Lupa Absen Pulang (Tidak Potong Gaji)'
+            stats.I++
+          }
+        } else {
+          if (perm.potongGaji) {
+            if (perm.halfDay) {
+              code = 'IP½'
+              color = 'bg-rose-200 text-rose-800 border-rose-300'
+              tooltip = 'Izin Potong Gaji (Setengah Hari)'
+              stats.IP++
             } else {
-              if (userPos.includes('SATPAM')) [lockHour, lockMin] = [18, 5]
-              else [lockHour, lockMin] = [19, 0]
-            }
-
-            const limitMinutes = lockHour * 60 + lockMin
-            if (totalMinutes > limitMinutes) dayLateCount++
-
-            // === BARIS TOOLTIP ===
-            tooltipLines.push(
-              `Shift ${idx + 1} (${s.shift})\n` +
-              `• Check-in  : ${formatTime(s.checkIn)}\n` +
-              `• Check-out : ${formatTime(s.checkOut)}`
-            )
-          })
-
-          // --- KODE & WARNA ---
-          if (shifts.length > 1) {
-            if (dayLateCount === 1) {
-              code = '2T¹'
-              color = 'bg-yellow-600 text-white font-bold'
-            } else if (dayLateCount >= 2) {
-              code = '2T²'
-              color = 'bg-orange-700 text-white font-bold'
-            } else {
-              code = '2x'
-              color = 'bg-green-600 text-white font-bold'
+              code = 'IP'
+              color = 'bg-rose-300 text-rose-900 border-rose-400'
+              tooltip = 'Izin Potong Gaji (Full)'
+              stats.IP++
             }
           } else {
-            if (dayLateCount > 0) {
-              code = 'T'
-              color = 'bg-yellow-500 text-white font-bold'
-            } else {
-              code = 'H'
-              color = 'bg-green-200 text-green-800 border-green-300'
-            }
+            code = 'I'
+            color = 'bg-yellow-200 text-yellow-800'
+            tooltip = 'Izin (Tidak Potong Gaji)'
+            stats.I++
+          }
+        }
+      }
+      // ===== LEAVE =====
+      else if (leaveMap.has(key)) {
+        const info = leaveMap.get(key)!
+        if (info.half_day) { code = '½'; color = 'bg-purple-200 text-purple-800'; tooltip = 'Cuti Setengah Hari'; stats.Half++ }
+        else if (info.type.toLowerCase().includes('sakit')) { code = 'S'; color = 'bg-orange-200 text-orange-800'; tooltip = `Sakit: ${info.type}`; stats.S++ }
+        else { code = 'C'; color = 'bg-blue-200 text-blue-800'; tooltip = `Cuti: ${info.type}`; stats.C++ }
+      }
+      // ===== ATTENDANCE =====
+      else if (attendanceMap.has(key)) {
+        const shifts = attendanceMap.get(key) || []
+        let dayLateCount = 0
+        let earlyLeave = false
+        let tooltipLines: string[] = []
+        const userPos = profile.position?.toUpperCase() || ''
+
+        shifts.forEach((s, idx) => {
+          const checkInDate = new Date(s.checkIn)
+          const checkOutDate = s.checkOut ? new Date(s.checkOut) : null
+
+          const checkInMinutes = checkInDate.getHours() * 60 + checkInDate.getMinutes()
+
+          let lockHour, lockMin
+          if ((s.shift || '').toLowerCase().includes('pagi')) {
+            if (userPos.includes('SATPAM')) [lockHour, lockMin] = [7, 5]
+            else if (userPos.includes('CS')) [lockHour, lockMin] = [7, 30]
+            else [lockHour, lockMin] = [8, 0]
+          } else {
+            if (userPos.includes('SATPAM')) [lockHour, lockMin] = [18, 5]
+            else [lockHour, lockMin] = [19, 0]
           }
 
-          tooltip =
-            `${code === 'H' ? 'Hadir Tepat Waktu' : 'Hadir'}\n` +
-            tooltipLines.join('\n')
+          if (checkInMinutes > lockHour * 60 + lockMin) dayLateCount++
 
-          stats.H++
-          stats.Sft += shifts.length
-          stats.T += dayLateCount
-        }
-        else if (holidayName) {
-            code = 'L'; color = 'bg-red-600 text-white font-bold'; tooltip = `LIBUR NASIONAL: ${holidayName}`;
-        }
-        else if (isWeekend) { 
-            code = '-'; color = 'bg-red-500 text-white'; tooltip = 'Akhir Pekan (Sabtu/Minggu)';
-        }
-        else if (isAfter(today, dateObj)) { 
-            code = 'A'; color = 'bg-red-50 text-red-600 font-bold'; tooltip = 'Alpha / Tanpa Keterangan'; stats.A++ 
-        }
-        else { 
-            code = '-'; color = 'bg-white'; tooltip = 'Belum ada data';
+          // ===== LOGIKA FLEXI / PULANG CEPAT =====
+          if (checkOutDate) {
+            const checkOutMinutes = checkOutDate.getHours() * 60 + checkOutDate.getMinutes()
+            if (checkOutMinutes < 17 * 60) earlyLeave = true
+          }
+
+          tooltipLines.push(
+            `Shift ${idx + 1} (${s.shift})\n` +
+            `• Check-in  : ${formatTime(s.checkIn)}\n` +
+            `• Check-out : ${formatTime(s.checkOut)}`
+          )
+        })
+
+        // === KODE UTAMA ===
+        if (earlyLeave) {
+          code = 'P'
+          color = 'bg-orange-500 text-white font-bold'
+          tooltip = `Pulang sebelum jam 17:00\n${tooltipLines.join('\n')}`
+        } else if (shifts.length > 1) {
+          if (dayLateCount === 1) { code = '2T¹'; color = 'bg-yellow-600 text-white font-bold' }
+          else if (dayLateCount >= 2) { code = '2T²'; color = 'bg-orange-700 text-white font-bold' }
+          else { code = '2x'; color = 'bg-green-600 text-white font-bold' }
+        } else {
+          if (dayLateCount > 0) { code = 'T'; color = 'bg-yellow-500 text-white font-bold' }
+          else { code = 'H'; color = 'bg-green-200 text-green-800 border-green-300' }
         }
 
-        rowData.push({ date: dateStr, code, color, isHoliday: isOffDay, tooltip })
-      })
+        if (!earlyLeave) tooltip = `${code === 'H' ? 'Hadir Tepat Waktu' : 'Hadir'}\n${tooltipLines.join('\n')}`
 
-      return { no: index + 1, profile, days: rowData, stats, remainingLeave }
+        stats.H++
+        stats.Sft += shifts.length
+        stats.T += dayLateCount
+      }
+      // ===== LIBUR & WEEKEND =====
+      else if (holidayName) { code = 'L'; color = 'bg-red-600 text-white font-bold'; tooltip = `LIBUR NASIONAL: ${holidayName}` }
+      else if (isWeekend) { code = '-'; color = 'bg-red-500 text-white'; tooltip = 'Akhir Pekan (Sabtu/Minggu)' }
+      else if (isAfter(today, dateObj)) { code = 'A'; color = 'bg-red-50 text-red-600 font-bold'; tooltip = 'Alpha / Tanpa Keterangan'; stats.A++ }
+      else { code = '-'; color = 'bg-white'; tooltip = 'Belum ada data' }
+
+      rowData.push({ date: dateStr, code, color, isHoliday: isOffDay, tooltip })
     })
-  }, [profiles, attendanceMap, leaveMap, permissionMap, quotaMap, month, year, searchName, holidayMap])
 
+    return { no: index + 1, profile, days: rowData, stats, remainingLeave }
+  })
+}, [profiles, attendanceMap, leaveMap, permissionMap, quotaMap, month, year, searchName, holidayMap]);
   // 4. EXPORT TO EXCEL
   const exportToExcel = () => {
     if (matrixData.length === 0) {

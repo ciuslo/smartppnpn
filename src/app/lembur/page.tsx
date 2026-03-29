@@ -2,9 +2,9 @@
 
 import { Clock, ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { toast } from 'react-hot-toast';
+import { toast, Toaster } from 'react-hot-toast';
 
 const OFFICE_LOCATION = {
   latitude: 5.179003,
@@ -152,6 +152,7 @@ export default function CheckInPage() {
 
       toast.success('Clock-In lembur berhasil');
       setAttendanceToday(data);
+      
     } catch (err: any) {
       toast.error(err?.message || 'Gagal clock-in.');
     } finally {
@@ -236,10 +237,18 @@ export default function CheckInPage() {
     });
   };
 
+  const getLemburDurationMinutes = () => {
+    if (!attendanceToday?.check_in) return 0;
+    const checkInTime = new Date(attendanceToday.check_in).getTime();
+    const now = new Date().getTime();
+    return (now - checkInTime) / 1000 / 60; // menit
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       <header className="bg-blue-900 text-white p-4 shadow-lg flex items-center">
-        <button onClick={() => router.back()} className="p-1 mr-4">
+       <Toaster position="top-right" reverseOrder={false} /> 
+       <button onClick={() => router.push('/')} className="p-1 mr-4">
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-xl font-bold">Absensi Lembur</h1>
@@ -319,18 +328,30 @@ export default function CheckInPage() {
 
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            (attendanceToday?.check_in &&
+              !attendanceToday?.check_out &&
+              getLemburDurationMinutes() < 60) // minimal 1 jam
+          }
           className={`w-full py-4 text-white font-extrabold rounded-xl shadow-xl ${
-            isSubmitting ? 'bg-gray-400' : 'bg-blue-900 hover:bg-blue-800'
+            isSubmitting ||
+            (attendanceToday?.check_in &&
+              !attendanceToday?.check_out &&
+              getLemburDurationMinutes() < 60)
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-900 hover:bg-blue-800'
           }`}
         >
           {isSubmitting
             ? 'Memproses...'
             : !attendanceToday
-              ? 'CLOCK-IN LEMBUR'
-              : !attendanceToday.check_out
-                ? 'CLOCK-OUT LEMBUR'
-                : 'LEMBUR SELESAI'}
+            ? 'CLOCK-IN LEMBUR'
+            : !attendanceToday.check_out
+            ? getLemburDurationMinutes() < 60
+              ? `CLOCK-OUT (minimal 1 jam)`
+              : 'CLOCK-OUT LEMBUR'
+            : 'LEMBUR SELESAI'}
         </button>
       </main>
     </div>

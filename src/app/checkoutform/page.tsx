@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'react-hot-toast';
 
-const OFFICE_LOCATION = { latitude: 5.179003, longitude: 97.149272, RADIUS_M: 200 };
+const OFFICE_LOCATION = { latitude: 5.179003, longitude: 97.149272, RADIUS_M: 2000 };
 const VALID_LOGBOOK_STATUS = ['COMPLETED'];
 
 export default function CheckOutForm() {

@@ -56,6 +56,10 @@ type ShiftDetail = {
   shiftName: string
   checkIn: string | null
   checkOut: string | null
+  checkInLocation: string | null
+  checkOutLocation: string | null
+  checkInDistanceM: string | null
+  checkOutDistanceM: string | null
   lateMinutes: number
   isLate: boolean
 }
@@ -109,6 +113,7 @@ export default function DetailAbsensiPegawaiPage() {
     checkOut: ''
   })
 
+  
   // 1. Load Daftar Pegawai
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -177,7 +182,8 @@ export default function DetailAbsensiPegawaiPage() {
         .from('attendances')
         .select(`
             id, user_id, attendance_date, shift, shift_start,
-            check_in, check_out
+            check_in, check_out, check_in_location, check_out_location, 
+            check_in_distance_m, check_out_distance_m
         `)
         .gte('attendance_date', startStr)
         .lte('attendance_date', endStr)
@@ -274,6 +280,10 @@ export default function DetailAbsensiPegawaiPage() {
                         shiftName: att.shift || '-',
                         checkIn: att.check_in,
                         checkOut: att.check_out,
+                        checkInLocation: att.check_in_location,
+                        checkOutLocation: att.check_out_location,
+                        checkInDistanceM: att.check_in_distance_m,
+                        checkOutDistanceM: att.check_out_distance_m,
                         lateMinutes: lateMins,
                         isLate
                     }
@@ -420,6 +430,7 @@ export default function DetailAbsensiPegawaiPage() {
   // --- EXCEL & PDF ---
   const exportExcel = () => { /* Logic Export Excel (Sama seperti sebelumnya) */ }
   const exportPDF = () => { /* Logic Export PDF (Sama seperti sebelumnya) */ }
+  const formatDistance = (dist: number | null) => (dist !== null ? `${dist.toFixed(1)} m` : '-')
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 font-sans text-xs sm:text-sm relative">
@@ -630,13 +641,12 @@ export default function DetailAbsensiPegawaiPage() {
                     <thead className="bg-slate-800 text-white">
                         <tr>
                             <th className="p-4 font-semibold w-28">Tanggal</th>
-                            <th className="p-4 font-semibold">Nama Pegawai</th> 
-                            <th className="p-4 font-semibold">Jabatan</th>
+                            <th className="p-4 font-semibold">Nama Pegawai</th>
                             <th className="p-4 font-semibold w-24">Status</th>
                             <th className="p-4 font-semibold w-24">Shift</th>
                             <th className="p-4 font-semibold bg-slate-900 border-l border-slate-700 text-center">Masuk</th>
                             <th className="p-4 font-semibold border-l border-slate-700 text-center">Pulang</th>
-                            <th className="p-4 font-semibold border-l border-slate-700">Ket.</th>
+                            <th className="p-4 font-semibold border-l border-slate-700">Aksi</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -646,8 +656,10 @@ export default function DetailAbsensiPegawaiPage() {
                                     <div className="font-bold text-gray-800">{format(rec.date, 'dd MMM yyyy', { locale: idLocale })}</div>
                                     <div className="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">{rec.dayName}</div>
                                 </td>
-                                <td className="p-4 align-top font-medium text-gray-900">{rec.profileName}</td>
-                                <td className="p-4 align-top text-gray-600">{rec.profilePosition}</td>
+                                <td className="p-4 align-top font-medium text-gray-900">{rec.profileName} 
+                                    <div className="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">
+                                        {rec.profilePosition}</div>
+                                        </td>
                                 <td className="p-4 align-top">
                                     <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border shadow-sm block w-fit
                                         ${rec.statusCode.includes('H') || rec.statusCode === '2x' ? 'bg-green-100 text-green-700 border-green-200' : 
@@ -670,8 +682,10 @@ export default function DetailAbsensiPegawaiPage() {
                                                     <div className="p-4 text-gray-600 font-medium col-span-1">{s.shiftName}</div>
                                                     <div className="p-4 bg-gray-50/80 border-l border-gray-100 col-span-1 text-center">
                                                         <div className="font-mono text-base font-extrabold text-slate-800">
-                                                            {s.checkIn ? format(new Date(s.checkIn), 'HH:mm') : '-'}
+                                                         Pukul :  {s.checkIn ? format(new Date(s.checkIn), 'HH:mm') : '-'} WIB
                                                         </div>
+                                                        <div className="line-clamp-1">Jarak : {formatDistance(s.checkInDistanceM)}</div>
+                                                        <div className="line-clamp-1">{s.checkInLocation || '-'}</div>
                                                         {s.isLate && (
                                                             <div className="flex items-center justify-center gap-1 text-[10px] text-red-600 font-bold mt-1 bg-red-50 px-1.5 py-0.5 rounded w-fit mx-auto">
                                                                 <AlertCircle className="w-3 h-3"/> Terlambat
@@ -679,13 +693,15 @@ export default function DetailAbsensiPegawaiPage() {
                                                         )}
                                                     </div>
                                                     <div className="p-4 border-l border-gray-100 col-span-1 text-center">
-                                                        <div className="font-mono text-base font-bold text-gray-600">
-                                                            {s.checkOut ? format(new Date(s.checkOut), 'HH:mm') : '-'}
+                                                        <div className="font-mono text-base font-bold text-gray-600"> 
+                                                          Pukul  {s.checkOut ? format(new Date(s.checkOut), 'HH:mm') : '-'}  WIB
                                                         </div>
+                                                        <div className="line-clamp-1">Jarak : {formatDistance(s.checkOutDistanceM)}</div>
+                                                        <div className="line-clamp-1">{s.checkOutLocation || '-'}</div>
                                                     </div>
                                                     {/* KOLOM KETERANGAN DENGAN TOMBOL EDIT */}
                                                     <div className="p-4 border-l border-gray-100 col-span-1 text-xs text-gray-500 italic flex justify-between items-center group">
-                                                        <span>{s.isLate ? 'Terlambat' : (s.checkIn ? 'Tepat Waktu' : '-')}</span>
+                                                        {/* <span>{s.isLate ? 'Terlambat' : (s.checkIn ? 'Tepat Waktu' : '-')}</span> */}
                                                         
                                                         {/* TOMBOL EDIT HANYA MUNCUL JIKA FILTER PEGAWAI & HARIAN DIPILIH */}
                                                         {selectedProfileId !== '' && filterType === 'daily' && s.id && (

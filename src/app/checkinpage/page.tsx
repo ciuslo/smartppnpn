@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 const OFFICE_LOCATION = {
   latitude: 5.179003,
   longitude: 97.149272,
-  RADIUS_M: 2000,
+  RADIUS_M: 200,
 };
 
 const WIB_OFFSET = 7 * 60 * 60 * 1000;
@@ -126,37 +126,6 @@ export default function CheckInPage() {
     };
     checkAttendance();
   }, [todayDate, shift, userId]);
-
-//tambah handle toast absen terlambat
-  const confirmToast = (message: string) => {
-    return new Promise<boolean>((resolve) => {
-      toast((t) => (
-        <div className="flex flex-col gap-3">
-          <span className="text-sm">{message}</span>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                resolve(false);
-              }}
-              className="px-3 py-1 text-sm bg-gray-200 rounded"
-            >
-              Batal
-            </button>
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                resolve(true);
-              }}
-              className="px-3 py-1 text-sm bg-blue-900 text-white rounded"
-            >
-              Lanjut
-            </button>
-          </div>
-        </div>
-      ), { duration: 10000 });
-    });
-  };
 
   // --- HANDLE CHECK-IN REVISI ---
   const handleCheckIn = async () => {

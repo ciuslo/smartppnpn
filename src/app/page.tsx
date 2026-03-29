@@ -61,7 +61,7 @@ export default function SplashPage() {
             </div>
             
             <h1 className="mt-6 text-3xl font-bold tracking-wider">
-                Absensi & Logbook
+                Sistem Manajemen Akuntabilitas dan Realisasi Kinerja Terintegrasi PPNPN 
             </h1>
             <p className="mt-2 text-lg text-blue-200">
                 KPPN Lhokseumawe

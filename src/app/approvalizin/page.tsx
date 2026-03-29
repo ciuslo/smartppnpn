@@ -176,7 +176,7 @@ export default function ApprovalIzinPage() {
         // Panggil RPC Level 2
         const level1Approval = getApprovalRecord(izin_id, 1)
         if (status === 'Disetujui' && level1Approval?.status !== 'Disetujui') {
-          return alert('❌ Kepala Kantor hanya dapat menyetujui jika Kasubbag sudah menyetujui.')
+          return alert('❌ Admin hanya dapat menyetujui jika validator sudah menyetujui.')
         }
         
         const potong = potongGajiChecks[izin_id] || false;
@@ -190,7 +190,7 @@ export default function ApprovalIzinPage() {
         if (error) throw error
       }
       
-      await Promise.all([fetchApprovals(), fetchApprovals()])
+      await fetchApprovals()
     } catch (err: any) {
       console.error('Error in insertApproval:', err)
       alert(`❌ Gagal menyimpan persetujuan: ${err.message || 'Error tidak diketahui'}`)

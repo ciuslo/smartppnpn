@@ -248,7 +248,7 @@ export default function ApprovalIzinPage() {
       </div>
 
       <h1 className="text-3xl font-bold mt-2 text-left text-gray-800">
-        Persetujuan Izin Pegawai ({approverRole === 'kasubbag' ? 'Kasubbag' : 'Kepala Kantor'})
+        Persetujuan Izin Pegawai ({approverRole === 'kasubbag' ? 'Validator' : 'Approver'})
       </h1>
 
       {/* ================= PENDING ================= */}

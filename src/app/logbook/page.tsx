@@ -162,6 +162,14 @@ export default function LogbookPage() {
           }
         } else {
           // Jika belum ada, buat logbook baru (Auto-create)
+
+          // ================= RANDOM VERIFIKASI MINGGUAN =================
+          const now = new Date()
+          const startYear = new Date(now.getFullYear(), 0, 1)
+          const days = Math.floor(  (now.getTime() - startYear.getTime()) / 86400000 )
+          const weekNumber = Math.ceil(  (days + startYear.getDay() + 1) / 7)
+          // 5% sampling verifikasi mingguan
+          const randomVerify =  ((activeSession.id + weekNumber) % 100) < 5
           const { data: newLogbook, error: insertErr } = await supabase
             .from('logbooks')
             .insert({
@@ -169,6 +177,7 @@ export default function LogbookPage() {
               attendance_id: activeSession.id,
               shift: activeSession.shift,
               log_date: activeSession.attendance_date, // Pakai tanggal absen
+              activity_name: randomVerify ? 'random' : 'system',
               status: 'IN_PROGRESS'
             })
             .select('id')
@@ -215,6 +224,7 @@ export default function LogbookPage() {
 
     try {
       // 1. Update Header Logbook
+      
       const { error: updateErr } = await supabase
         .from('logbooks')
         .update({

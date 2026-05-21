@@ -224,6 +224,8 @@ export default function DashboardPage() {
           <FeatureCard icon={AlertTriangle} title="Pengajuan Izin" description="Ajukan izin tidak hadir atau keperluan mendadak." href="/pengajuanizin" />
           <FeatureCard icon={BarChart2} title="Rekap Absensi" description="Lihat riwayat kehadiran bulanan." href="/rekapabsensi" />
           <FeatureCard icon={BarChart2} title="Rekap Lembur" description="Lihat riwayat kehadiran bulanan." href="/rekaplembur" />
+          <FeatureCard icon={BarChart2} title="Rapor Kinerja" description="Masih tahap pengembangan" href={''} />
+          <FeatureCard icon={BarChart2} title="Perilaku Kerja" description="Masih tahap pengembangan" href={''} />
         </div>
       </main>
     </div>

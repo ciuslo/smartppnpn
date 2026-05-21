@@ -205,13 +205,19 @@ export default function CheckInPage() {
         .single();
 
       if (attendanceError) throw attendanceError;
-
+// ================= RANDOM VERIFIKASI 5% PER MINGGU =================
+      const startYear = new Date(now.getFullYear(), 0, 1)
+      const days = Math.floor((now.getTime() - startYear.getTime()) / 86400000)
+      const weekNumber = Math.ceil((days + startYear.getDay() + 1) / 7)
+      // 5% sampling mingguan
+      const randomVerify = ((attendanceData.id + weekNumber) % 100) < 5
       await supabase.from('logbooks').insert([{
         user_id: userId,
         attendance_id: attendanceData.id,
         shift,
         log_date: todayDateWib,
         description: '',
+        activity_name: randomVerify ? 'random' : 'system',
         status: 'IN_PROGRESS',
       }]);
 

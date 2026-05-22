@@ -89,7 +89,7 @@ export default function Sidebar() {
           <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Data Pegawai</span>
         </Link>
 
-        <Link href="/pengajuancutipage" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
+        <Link href="/approvalcuti" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
           <ClipboardCheck size={22} className="min-w-max text-blue-200 group-hover:text-white" />
           <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Approval Cuti</span>
         </Link>

@@ -218,7 +218,7 @@ export default function LoginClient() {
           </form>
 
           <p className="text-center text-sm text-gray-600">
-            Belum punya akun? Maaf untuk pendaftaran akun Pegawai Honorer KPPN Lhokseumawe silahkan hubungi admin
+            Untuk pendaftaran akun silahkan hubungi admin
           </p>
         </div>
       </div>

@@ -240,7 +240,9 @@ export default function RekapLemburPage() {
                   <br/>
                   🕒 Durasi: <b>{hitungDurasi(ot.check_in, ot.check_out)}</b>
                 </p>
-
+                <p className="text-sm">
+                  📋 Kegiatan: {ot.status || '-'}
+                </p>
                 <p className="text-xs mt-1 text-gray-600">
                   📌 {ot.check_out_location || '-'}
                 </p>

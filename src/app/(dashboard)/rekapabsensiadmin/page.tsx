@@ -240,6 +240,12 @@ export default function RekapAbsensiMatrix() {
     const d = new Date(value)
     return format(d, 'HH:mm')
   }
+
+  const formatDTime = (value?: string) => {
+    if (!value) return '-'
+    const d = new Date(value)
+    return format(d, 'dd-MM-yyyy HH:mm')
+  }
   // 3. CORE LOGIC
  const matrixData = useMemo(() => {
   let filteredProfiles = profiles
@@ -356,15 +362,91 @@ export default function RekapAbsensiMatrix() {
           if (checkInMinutes > lockHour * 60 + lockMin) dayLateCount++
 
           // ===== LOGIKA FLEXI / PULANG CEPAT =====
+          // =========================
+          // KONFIGURASI KHUSUS
+          // =========================
+
+          // ID CS SETENGAH HARI
+          // FORMAT:
+          // 'ID_USER': JAM_PULANG_MINIMAL
+
+          const HALF_DAY_CS: Record<string, string> = {
+            // contoh:
+            'a23e6ebe-9ab3-4a1c-bfaa-5ec9197fde9f': '12:00'
+            // 'uuid-user-cs-2': '13:00',
+          }
+
+          // =========================
+          // VALIDASI PULANG CEPAT
+          // =========================
+
           if (checkOutDate) {
-            const checkOutMinutes = checkOutDate.getHours() * 60 + checkOutDate.getMinutes()
-            if (checkOutMinutes < 17 * 60) earlyLeave = true
+
+            // Total menit checkout
+            const checkOutMinutes =
+              checkOutDate.getHours() * 60 +
+              checkOutDate.getMinutes()
+
+            // Default jam pulang minimal
+            let minimumCheckoutMinutes = 17 * 60 // 17:00
+
+            const shiftName = (s.shift || '').toLowerCase()
+
+            // =========================
+            // SATPAM SHIFT MALAM
+            // =========================
+            // Satpam malam pulang hari berikutnya
+            // Jangan dianggap pulang cepat
+            // jika checkout lewat tengah malam
+
+            const isSatpam = userPos.includes('SATPAM')
+            const isNightShift =
+              shiftName.includes('malam') 
+
+            if (isSatpam && isNightShift) {
+
+              // Jika checkout tanggal berikutnya
+              const checkInDay = checkInDate.getDate()
+              const checkOutDay = checkOutDate.getDate()
+
+              // Checkout beda hari = valid
+              if (checkOutDay !== checkInDay) {
+                minimumCheckoutMinutes = 1
+              } else {
+                // Kalau masih hari sama,
+                // minimal checkout jam 23:00
+                minimumCheckoutMinutes = 23 * 60
+              }
+            }
+
+            // =========================
+            // CS SETENGAH HARI
+            // =========================
+
+            const customHalfDayTime = HALF_DAY_CS[profile.id]
+
+            if (customHalfDayTime) {
+
+              const [hour, minute] =
+                customHalfDayTime.split(':').map(Number)
+
+              minimumCheckoutMinutes =
+                (hour * 60) + minute
+            }
+
+            // =========================
+            // FINAL VALIDATION
+            // =========================
+
+            if (checkOutMinutes < minimumCheckoutMinutes) {
+              earlyLeave = true
+            }
           }
 
           tooltipLines.push(
             `Shift ${idx + 1} (${s.shift})\n` +
             `• Check-in  : ${formatTime(s.checkIn)}\n` +
-            `• Check-out : ${formatTime(s.checkOut)}`
+            `• Check-out : ${formatDTime(s.checkOut)}`
           )
         })
 

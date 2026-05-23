@@ -119,7 +119,7 @@ const isHolidayOrWeekend = (y:number,m:number,d:number) => {
 
       let query = supabase
         .from("lembur")
-        .select("user_id, attendance_date, check_in, check_out")
+        .select("user_id, attendance_date, check_in, check_out, status")
         .gte("attendance_date", firstDay)
         .lte("attendance_date", lastDay)
 
@@ -197,6 +197,7 @@ const isHolidayOrWeekend = (y:number,m:number,d:number) => {
       map[r.user_id].hari[day] = {
         check_in: r.check_in,
         check_out: r.check_out,
+        status: r.status,
         duration: calcDuration(r.check_in, r.check_out)
       }
 
@@ -450,8 +451,10 @@ const exportPDF = () => {
                         data
                           ? `Tanggal: ${fmtDate(data.check_in)}\n` +
                             `In: ${fmtTime(data.check_in)}\n` +
-                            `Out: ${fmtTime(data.check_out)}\n` +
-                            `Durasi: ${data.duration}`
+                            `Out: ${fmtTime(data.check_out)}\n` +                            
+                            `Kegiatan: ${data.status}\n` +
+                            `Jumlah Jam Lembur: ${data.duration}`
+                            
                           : ""
                       }
                     >

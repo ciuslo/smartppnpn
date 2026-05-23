@@ -119,6 +119,11 @@ export default function Sidebar() {
           <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Logbook Pegawai</span>
         </Link>
 
+        <Link href="" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
+          <BookOpenCheck size={22} className="min-w-max text-blue-200 group-hover:text-white" />
+          <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Nilai Perilaku</span>
+        </Link>
+
         {/* --- DIVIDER PENGATURAN SISTEM --- */}
         <div className={`mt-4 mb-2 border-t border-blue-700/50 pt-4 ${!isOpen ? "text-center" : "px-3"}`}>
           <span className={`text-xs font-bold text-blue-300 uppercase tracking-wider ${!isOpen && "hidden"}`}>

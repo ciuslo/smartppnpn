@@ -32,6 +32,7 @@ export default function CheckInPage() {
 
   // === record lembur hari ini ===
   const [attendanceToday, setAttendanceToday] = useState<any>(null);
+  const [uraianLembur, setUraianLembur] = useState('');
 
   // realtime jam
   useEffect(() => {
@@ -165,12 +166,29 @@ export default function CheckInPage() {
   // =========================
   const handleClockOut = async () => {
     if (!attendanceToday) return;
-    if (!location) return toast.error('Lokasi tidak terdeteksi.');
+    if (!location)
+      return toast.error(
+        'Lokasi tidak terdeteksi.'
+      );
+
+    // =========================
+    // VALIDASI URAIAN
+    // =========================
+
+    if (!uraianLembur.trim()) {
+      return toast.error(
+        'Uraian lembur wajib diisi sebelum clock-out.'
+      );
+    }
 
     setIsSubmitting(true);
 
     try {
       const now = new Date();
+
+      // STATUS FINAL
+      const finalStatus =
+        `Selesai - ${uraianLembur}`;
 
       const { error } = await supabase
         .from('lembur')
@@ -180,22 +198,34 @@ export default function CheckInPage() {
           check_out_latitude: location.lat,
           check_out_longitude: location.lon,
           check_out_distance_m: distance,
-          status: 'Selesai'
+          status: finalStatus
         })
         .eq('id', attendanceToday.id);
 
-      if (error) throw error;
+      if (error)
+        throw error;
 
-      toast.success('Clock-Out lembur berhasil');
+      toast.success(
+        'Clock-Out lembur berhasil'
+      );
 
-      // reset record
       setAttendanceToday({
         ...attendanceToday,
         check_out: now.toISOString(),
+        status: finalStatus
       });
+
+      // RESET TEXTAREA
+      setUraianLembur('');
+
     } catch (err: any) {
-      toast.error(err?.message || 'Gagal clock-out.');
+
+      toast.error(
+        err?.message || 'Gagal clock-out.'
+      );
+
     } finally {
+
       setIsSubmitting(false);
     }
   };
@@ -299,6 +329,51 @@ export default function CheckInPage() {
                 Belum melakukan clock-out
               </p>
             )}
+          </div>
+        )}
+
+        {/* =========================
+            URAIAN LEMBUR
+        ========================= */}
+
+        {attendanceToday &&
+        !attendanceToday.check_out && (
+
+          <div className="bg-white p-4 rounded-xl shadow-md border mb-5">
+
+            <label className="block font-semibold text-gray-700 mb-2">
+
+              Uraian Lembur
+              <span className="text-red-600"> *</span>
+
+            </label>
+
+            <textarea
+              value={uraianLembur}
+              onChange={(e) =>
+                setUraianLembur(e.target.value)
+              }
+              rows={4}
+              placeholder="Contoh: Penyelesaian SP2D, monitoring OMSPAN, rekap LPJ, penyusunan laporan, dll..."
+              className="
+                w-full
+                border
+                rounded-lg
+                p-3
+                text-sm
+                focus:outline-none
+                focus:ring-2
+                focus:ring-blue-500
+              "
+            />
+
+            <p className="text-xs text-gray-500 mt-2">
+
+              Uraian lembur wajib diisi
+              sebelum melakukan clock-out.
+
+            </p>
+
           </div>
         )}
 

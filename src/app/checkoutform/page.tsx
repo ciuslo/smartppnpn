@@ -4,7 +4,7 @@ import { Clock, ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { toast } from 'react-hot-toast';
+import { toast, Toaster } from 'react-hot-toast';
 
 const OFFICE_LOCATION: {
   latitude: number;
@@ -159,41 +159,34 @@ export default function CheckOutForm() {
 
   // --- Handle CheckOut ---
   const handleCheckOut = async () => {
+    if (!currentShift) return toast.error('Shift error.');
     if (!attendanceId) return toast.error('Tidak ada sesi absen yang aktif.');
     if (!location) return toast.error('Lokasi belum terdeteksi.');
-    if (!currentShift) return toast.error('Shift error.');
     
-    if (!checkInTime) {
-        return toast.error('Waktu check-in tidak ditemukan.');
-      }
+    // Pengecekan 4 jam
+    const now = new Date();
+    const checkInDate = new Date(checkInTime!);
+    const workedHours = (now.getTime() - checkInDate.getTime()) / (1000 * 60 * 60);
 
-      const now = new Date();
-      const checkInDate = new Date(checkInTime);
+    if (workedHours < 4) {
+      const remainingMinutes = Math.ceil((4 - workedHours) * 60);
+      toast.error(`Belum bisa absen pulang! Anda baru bekerja ${workedHours.toFixed(1)} jam. Tunggu ${remainingMinutes} menit lagi.`);
+      return; // Berhenti di sini
+    }
 
-      const workedMilliseconds =
-        now.getTime() - checkInDate.getTime();
-
-      const workedHours =
-        workedMilliseconds / (1000 * 60 * 60);
-
-      if (workedHours < 4) {
-        const remainingMinutes = Math.ceil(
-          (4 - workedHours) * 60
-        );
-
-        return toast.error(
-          `Anda belum bekerja lebih dari 4 jam`
-        );
-      }
-
+    // Pengecekan Logbook
     if (!logbookStatus || !VALID_LOGBOOK_STATUS.includes(logbookStatus.toUpperCase())) {
-      return toast.error('Anda harus mengisi dan Submit Logbook terlebih dahulu!');
+      toast.error('Anda harus mengisi dan Submit Logbook terlebih dahulu!');
+      return;
     }
-      
-    if (distance !== null && distance > OFFICE_LOCATION.radius_m ) {
-      return toast.error('Anda berada di luar radius kantor.');
+        
+    // Pengecekan Lokasi
+    if (distance !== null && distance > OFFICE_LOCATION.radius_m) {
+      toast.error('Anda berada di luar radius kantor.');
+      return;
     }
 
+    // Jika semua lolos, lanjutkan ke proses update
     setIsSubmitting(true);
     try {
       const noww = new Date();
@@ -225,6 +218,7 @@ export default function CheckOutForm() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
+      <Toaster position="top-center" reverseOrder={false} />
       <header className="bg-blue-900 text-white p-4 shadow-lg flex items-center">
         <button onClick={() => router.back()} className="p-1 mr-4 text-white hover:text-gray-300 transition">
           <ArrowLeft size={24} />
@@ -274,21 +268,15 @@ export default function CheckOutForm() {
           )}
         </div>
 
+        
         <button
           onClick={handleCheckOut}
-          disabled={isSubmitting || !canCheckOut || isOutOfRadius || !attendanceId}
+          // Tombol tidak lagi disabled secara teknis agar onClick tetap berjalan
           className={`w-full py-4 text-white font-extrabold rounded-xl transition duration-300 shadow-xl ${
-            isSubmitting || !attendanceId ? 'bg-gray-400 cursor-not-allowed' 
-            : !canCheckOut ? 'bg-gray-400 cursor-not-allowed' 
-            : isOutOfRadius ? 'bg-red-400 cursor-not-allowed' 
-            : 'bg-blue-900 hover:bg-blue-800 shadow-blue-500/50'
+            isSubmitting ? 'bg-gray-400' : 'bg-blue-900 hover:bg-blue-800'
           }`}
         >
-          {isSubmitting ? 'Memproses...' 
-           : !attendanceId ? 'Tidak Ada Absen Aktif'
-           : !canCheckOut ? 'Isi Logbook Dulu'
-           : isOutOfRadius ? 'Di Luar Jangkauan' 
-           : `SUBMIT ABSEN PULANG`}
+          {isSubmitting ? 'Memproses...' : 'SUBMIT ABSEN PULANG'}
         </button>
 
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 text-center">
@@ -296,7 +284,7 @@ export default function CheckOutForm() {
           <ul className="list-disc list-inside text-left ml-4 mt-1">
             <li>Sudah Absen Masuk (Sistem akan mendeteksi shift terakhir yang belum di-checkout).</li>
             <li>Logbook sudah disubmit (Status: COMPLETED).</li>
-            <li>Berada dalam radius 500 meter kantor.</li>
+            <li>Berada dalam radius kantor.</li>
           </ul>
         </div>
       </main>

@@ -121,7 +121,7 @@ export default function DashboardPage() {
   const handleAbsenMasuk = () => {
     console.log('Absen Masuk clicked, usePhotoAttendance:', usePhotoAttendance);
     router.push(
-    usePhotoAttendance ? '/presensi' : '/checkinpage'
+    usePhotoAttendance==='true' ? '/presensi' : '/checkinpage'
   );
 };
   const handleAbsenPulang = () => { 

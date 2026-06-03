@@ -2,12 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import ReviewCard from './ReviewCard';
 
-export default function PenilaianPerilakuPage() {
+interface Assignment {
+  id: string;
+  assessor_id: string;
+  assessed_id: string;
+  period_semester: number;
+  period_year: number;
+  is_completed: boolean;
 
-  const [assignments, setAssignments] = useState<any[]>([]);
+  assessed?: {
+    id: string;
+    full_name: string;
+    position: string;
+  };
+}
+
+export default function PeerReviewPage() {
+
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadAssignments();
@@ -15,94 +31,85 @@ export default function PenilaianPerilakuPage() {
 
   async function loadAssignments() {
 
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
+    try {
 
-    if (!user) return;
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
 
-    const now = new Date();
+      if (!user) return;
 
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
+      const { data, error } = await supabase
+        .from('peer_review_assignments')
+        .select('*')
+        .eq('assessor_id', user.id)
+        .eq('is_completed', false);
 
-    const { data, error } = await supabase
-      .from('peer_review_assignments')
-      .select(`
-        *
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        setAssignments([]);
+        return;
+      }
+
+      const assessedIds = data.map(
+        (item) => item.assessed_id
+      );
+
+      const {
+        data: profiles
+      } = await supabase
+        .from('profiles')
+        .select('id, full_name, position')
+        .in('id', assessedIds);
+
+      const merged = data.map((item) => ({
+        ...item,
+        assessed: profiles?.find(
+          (p) => p.id === item.assessed_id
         )
-      `)
-      .eq('assessor_id', user.id)
-      .eq('period_month', month)
-      .eq('period_year', year)
-      .eq('is_completed', false);
+      }));
 
-    if (!error) {
-      setAssignments(data || []);
+      setAssignments(merged);
+
+    } catch (err: any) {
+
+      toast.error(err.message);
+
+    } finally {
+
+      setLoading(false);
+
     }
   }
 
-  async function submitReview(
-    assignmentId: string,
-    assessedId: string,
-    form: any
-  ) {
-
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const now = new Date();
-
-    const payload = {
-      assignment_id: assignmentId,
-
-      assessor_id: user.id,
-      assessed_id: assessedId,
-
-      period_month: now.getMonth() + 1,
-      period_year: now.getFullYear(),
-
-      ...form
-    };
-
-    const { error } = await supabase
-      .from('peer_assessments')
-      .insert(payload);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    // update completed
-    await supabase
-      .from('peer_review_assignments')
-      .update({
-        is_completed: true
-      })
-      .eq('id', assignmentId);
-
-    toast.success('Penilaian berhasil');
-
-    loadAssignments();
+  if (loading) {
+    return (
+      <div className="p-6">
+        Loading...
+      </div>
+    );
   }
 
   return (
-    <div className="p-4">
+    <div className="max-w-4xl mx-auto p-4">
 
       <h1 className="text-2xl font-bold mb-6">
         Penilaian Rekan Kerja
       </h1>
 
+      {assignments.length === 0 && (
+        <div className="bg-green-50 border rounded-lg p-4">
+          Tidak ada penilaian yang harus diisi.
+        </div>
+      )}
+
       {assignments.map((item) => (
 
         <ReviewCard
           key={item.id}
-          item={item}
-          onSubmit={submitReview}
+          assignment={item}
+          onSuccess={loadAssignments}
         />
 
       ))}

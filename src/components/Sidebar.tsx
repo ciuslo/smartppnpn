@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'react-hot-toast';
@@ -21,6 +21,39 @@ import {
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
+  const [role, setRole] = useState<string>('');
+  const [loadingRole, setLoadingRole] = useState(true);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const {
+          data: { user }
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setLoadingRole(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        setRole(data?.role?.toLowerCase() || '');
+      } catch (err) {
+        console.error('Gagal mengambil role:', err);
+      } finally {
+        setLoadingRole(false);
+      }
+    };
+
+    fetchRole();
+  }, []);
 
   // Fungsi untuk Generate Kuota via Popup
   const handleGenerateQuota = async () => {
@@ -89,15 +122,37 @@ export default function Sidebar() {
           <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Data Pegawai</span>
         </Link>
 
-        <Link href="/approvalcuti" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
-          <ClipboardCheck size={22} className="min-w-max text-blue-200 group-hover:text-white" />
-          <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Approval Cuti</span>
-        </Link>
+        {!loadingRole && role !== 'admin' && (
+            <Link
+              href="/approvalcuti"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group"
+            >
+              <ClipboardCheck
+                size={22}
+                className="min-w-max text-blue-200 group-hover:text-white"
+              />
+              <span
+                className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}
+              >
+                Approval Cuti
+              </span>
+            </Link>
+          )}
 
-        <Link href="/approvalizin" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
-          <BadgeCheck size={22} className="min-w-max text-blue-200 group-hover:text-white" />
-          <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Approval Izin</span>
-        </Link>
+        {!loadingRole && role !== 'admin' && (
+          <Link
+            href="/approvalizin"
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group"
+          >
+            <BadgeCheck
+              size={22}
+              className="min-w-max text-blue-200 group-hover:text-white"
+            />
+            <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>
+              Approval Izin
+            </span>
+          </Link>
+        )}
 
         <Link href="/rekapabsensiadmin" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
           <FileSpreadsheet size={22} className="min-w-max text-blue-200 group-hover:text-white" />
@@ -119,9 +174,73 @@ export default function Sidebar() {
           <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Logbook Pegawai</span>
         </Link>
 
-        <Link href="" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
-          <BookOpenCheck size={22} className="min-w-max text-blue-200 group-hover:text-white" />
-          <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Nilai Perilaku</span>
+        {/* --- DATA PENILAIAN --- */}
+        <div
+          className={`mt-4 mb-2 border-t border-blue-700/50 pt-4 ${
+            !isOpen ? "text-center" : "px-3"
+          }`}
+        >
+          <span
+            className={`text-xs font-bold text-blue-300 uppercase tracking-wider ${
+              !isOpen && "hidden"
+            }`}
+          >
+            Data Penilaian
+          </span>
+
+          {!isOpen && (
+            <span className="text-blue-400 text-xs tracking-widest">
+              •••
+            </span>
+          )}
+        </div>
+
+        {/* Perilaku */}
+        <Link
+          href="/penilaianperilaku"
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group"
+        >
+          <BookOpenCheck
+            size={22}
+            className="min-w-max text-green-300 group-hover:text-white"
+          />
+          <span
+            className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}
+          >
+            Perilaku
+          </span>
+        </Link>
+
+        {/* Survei Kepuasan */}
+        <Link
+          href="/survei"
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group"
+        >
+          <ClipboardCheck
+            size={22}
+            className="min-w-max text-green-300 group-hover:text-white"
+          />
+          <span
+            className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}
+          >
+            Survei Kepuasan
+          </span>
+        </Link>
+
+        {/* Temuan KI */}
+        <Link
+          href="/rekomendasi"
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group"
+        >
+          <BadgeCheck
+            size={22}
+            className="min-w-max text-green-300 group-hover:text-white"
+          />
+          <span
+            className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}
+          >
+            Rekomendasi KI
+          </span>
         </Link>
 
         {/* --- DIVIDER PENGATURAN SISTEM --- */}

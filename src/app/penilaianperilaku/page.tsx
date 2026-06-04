@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation'
 import ReviewCard from './ReviewCard';
+import { ChevronLeft, FileText } from 'lucide-react';
 
 interface Assignment {
   id: string;
@@ -21,7 +23,7 @@ interface Assignment {
 }
 
 export default function PeerReviewPage() {
-
+  const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -92,11 +94,15 @@ export default function PeerReviewPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-
-      <h1 className="text-2xl font-bold mb-6">
-        Penilaian Rekan Kerja
-      </h1>
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 font-sans">
+      <header className="flex items-center justify-between mb-6">
+        <button onClick={() => router.back()} className="flex items-center text-blue-700 font-medium hover:underline">
+          <ChevronLeft size={20} className="mr-1" /> Kembali
+        </button>
+        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+          <FileText className="mr-2 text-blue-600" /> Penilaian Perilaku Rekan Kerja
+        </h1>
+      </header>
 
       {assignments.length === 0 && (
         <div className="bg-green-50 border rounded-lg p-4">

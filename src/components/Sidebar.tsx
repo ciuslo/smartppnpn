@@ -196,8 +196,10 @@ export default function Sidebar() {
         </div>
 
         {/* Perilaku */}
-        <Link
-          href="/penilaianperilaku"
+        
+        {!loadingRole && role !== 'admin' && (
+          <Link
+          href="/nilaiperilaku"
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group"
         >
           <BookOpenCheck
@@ -210,6 +212,7 @@ export default function Sidebar() {
             Perilaku
           </span>
         </Link>
+        )}
 
         {/* Survei Kepuasan */}
         <Link
@@ -240,6 +243,21 @@ export default function Sidebar() {
             className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}
           >
             Rekomendasi KI
+          </span>
+        </Link>
+
+         <Link
+          href="/raporkinerja"
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group"
+        >
+          <BookOpenCheck
+            size={22}
+            className="min-w-max text-green-300 group-hover:text-white"
+          />
+          <span
+            className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}
+          >
+            Rapor Kinerja
           </span>
         </Link>
 

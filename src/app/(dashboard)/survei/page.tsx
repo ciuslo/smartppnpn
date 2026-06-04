@@ -42,7 +42,11 @@ export default function SurveiPage() {
   // =========================
   // STATE
   // =========================
+  const [filterNama, setFilterNama] =
+    useState('');
 
+  const [filterTahun, setFilterTahun] =
+    useState(String(currentYear));
   const [users, setUsers] = useState<UserItem[]>([]);
   const [dataSurvei, setDataSurvei] = useState<
     SurveyItem[]
@@ -273,16 +277,49 @@ export default function SurveiPage() {
   // =========================
 
   const filteredData = useMemo(() => {
-    if (!filterPeriode)
-      return dataSurvei;
 
     return dataSurvei.filter(
-      (item) =>
-        item.periode_bulan ===
-        filterPeriode
-    );
-  }, [dataSurvei, filterPeriode]);
+      (item) => {
 
+        const namaPegawai =
+          users.find(
+            (u) =>
+              u.id === item.iduser
+          )?.full_name || '';
+
+        const matchNama =
+          namaPegawai
+            .toLowerCase()
+            .includes(
+              filterNama.toLowerCase()
+            );
+
+        const matchPeriode =
+          !filterPeriode ||
+          item.periode_bulan ===
+          filterPeriode;
+
+        const matchTahun =
+          !filterTahun ||
+          item.periode_bulan.includes(
+            filterTahun
+          );
+
+        return (
+          matchNama &&
+          matchPeriode &&
+          matchTahun
+        );
+      }
+    );
+
+  }, [
+    dataSurvei,
+    users,
+    filterNama,
+    filterPeriode,
+    filterTahun,
+  ]);
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <Toaster position="top-right" />
@@ -326,30 +363,91 @@ export default function SurveiPage() {
 
         <div className="bg-white rounded-2xl shadow p-4 mb-5">
 
-          <select
-            value={filterPeriode}
-            onChange={(e) =>
-              setFilterPeriode(
-                e.target.value
-              )
-            }
-            className="border rounded-xl p-3 w-full md:w-72"
-          >
-            <option value="">
-              Semua Periode
-            </option>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
-            {periodeOptions.map(
-              (periode) => (
-                <option
-                  key={periode}
-                  value={periode}
-                >
-                  {periode}
-                </option>
-              )
-            )}
-          </select>
+            {/* Nama */}
+
+            <input
+              type="text"
+              placeholder="Cari nama pegawai..."
+              value={filterNama}
+              onChange={(e) =>
+                setFilterNama(
+                  e.target.value
+                )
+              }
+              className="border rounded-xl p-3"
+            />
+
+            {/* Tahun */}
+
+            <select
+              value={filterTahun}
+              onChange={(e) =>
+                setFilterTahun(
+                  e.target.value
+                )
+              }
+              className="border rounded-xl p-3"
+            >
+              <option value="">
+                Semua Tahun
+              </option>
+
+              <option
+                value={String(
+                  currentYear - 1
+                )}
+              >
+                {currentYear - 1}
+              </option>
+
+              <option
+                value={String(
+                  currentYear
+                )}
+              >
+                {currentYear}
+              </option>
+
+              <option
+                value={String(
+                  currentYear + 1
+                )}
+              >
+                {currentYear + 1}
+              </option>
+            </select>
+
+            {/* Periode */}
+
+            <select
+              value={filterPeriode}
+              onChange={(e) =>
+                setFilterPeriode(
+                  e.target.value
+                )
+              }
+              className="border rounded-xl p-3"
+            >
+              <option value="">
+                Semua Periode
+              </option>
+
+              {periodeOptions.map(
+                (periode) => (
+                  <option
+                    key={periode}
+                    value={periode}
+                  >
+                    {periode}
+                  </option>
+                )
+              )}
+            </select>
+
+          </div>
+
         </div>
 
         {/* ===================== */}
@@ -385,7 +483,7 @@ export default function SurveiPage() {
               <tbody>
 
                 {filteredData.length ===
-                0 ? (
+                  0 ? (
                   <tr>
                     <td
                       colSpan={4}
@@ -402,11 +500,11 @@ export default function SurveiPage() {
                         className="border-t hover:bg-gray-50"
                       >
                         <td className="px-4 py-3 text-sm">
-                           {
-                                users.find(
-                                (user) => user.id === item.iduser
-                                )?.full_name || '-'
-                            }
+                          {
+                            users.find(
+                              (user) => user.id === item.iduser
+                            )?.full_name || '-'
+                          }
                         </td>
 
                         <td className="px-4 py-3 text-sm">
@@ -592,8 +690,8 @@ export default function SurveiPage() {
                   {loading
                     ? 'Menyimpan...'
                     : editingId
-                    ? 'Update Data'
-                    : 'Simpan Data'}
+                      ? 'Update Data'
+                      : 'Simpan Data'}
                 </button>
 
               </form>

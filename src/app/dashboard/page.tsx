@@ -2,7 +2,8 @@
 
 import { 
   ArrowLeft, ArrowRight, FileText, User, 
-  BarChart2, Briefcase, LogOut, AlertTriangle, RefreshCw 
+  BarChart2, Briefcase, LogOut, AlertTriangle, RefreshCw, 
+  BarChart3
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -17,6 +18,13 @@ export default function DashboardPage() {
   const [userData, setUserData] = useState({ fullName: "Loading...", email: "loading@kppn.go.id" });
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+//untuk rapor kinerja
+  const [showRaporModal, setShowRaporModal] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const defaultSemester = currentMonth <= 6 ? 1 : 2;
+  const [tahun, setTahun] = useState(currentYear);
+  const [semester, setSemester] = useState(defaultSemester);
   
   // Tanggal hari ini hanya untuk referensi visual/history, bukan filter utama
   const [todayDate, setTodayDate] = useState(new Date().toISOString().split('T')[0]);
@@ -154,13 +162,43 @@ export default function DashboardPage() {
   // Tombol Masuk aktif HANYA JIKA status 'Belum Absen' ATAU 'Pulang' (untuk memungkinkan double shift)
   const isMasukDisabled = absensiStatus === 'Masuk' || absensiStatus === 'Terlambat';
 
-  type FeatureCardProps = { icon: React.ComponentType<{ size?: number }>, title: string, description: string, href: string };
-  const FeatureCard = ({ icon: Icon, title, description, href }: FeatureCardProps) => (
-    <a href={href} className="flex items-center p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300 border border-gray-100 transform hover:scale-[1.01]">
-      <div className="p-3 bg-blue-100 text-blue-800 rounded-lg mr-4 shadow-inner"><Icon size={24} /></div>
-      <div><h3 className="font-bold text-lg text-gray-800">{title}</h3><p className="text-sm text-gray-500">{description}</p></div>
-    </a>
+  type FeatureCardProps = { icon: React.ComponentType<{ size?: number }>, title: string, description: string, href?: string, onClick?: () => void };
+  const FeatureCard = ({ icon: Icon, title, description, href, onClick }: FeatureCardProps) => {
+    const common = "flex items-center p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300 border border-gray-100 transform hover:scale-[1.01]";
+    if (onClick) {
+      return (
+        <button onClick={onClick} className={common}>
+          <div className="p-3 bg-blue-100 text-blue-800 rounded-lg mr-4 shadow-inner"><Icon size={24} /></div>
+          <div><h3 className="font-bold text-lg text-gray-800">{title}</h3><p className="text-sm text-gray-500">{description}</p></div>
+        </button>
+      );
+    }
+    return (
+      <a href={href || '#'} className={common}>
+        <div className="p-3 bg-blue-100 text-blue-800 rounded-lg mr-4 shadow-inner"><Icon size={24} /></div>
+        <div><h3 className="font-bold text-lg text-gray-800">{title}</h3><p className="text-sm text-gray-500">{description}</p></div>
+      </a>
+    );
+  };
+
+
+  const [open, setOpen] = useState(false);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+
+  // const router = useRouter();
+
+const handleOpenModal = () => {
+  setOpen(true);
+};
+
+const handleSubmit = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  router.push(
+    `/rapor/${user?.id}&tahun=${tahun}&semester=${semester}`
   );
+};
 
   if (isLoading || isLoggingOut) return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -170,6 +208,8 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+
+ 
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -233,9 +273,66 @@ export default function DashboardPage() {
           <FeatureCard icon={BarChart2} title="Rekap Absensi" description="Lihat riwayat kehadiran bulanan." href="/rekapabsensi" />
           <FeatureCard icon={BarChart2} title="Rekap Lembur" description="Lihat riwayat kehadiran bulanan." href="/rekaplembur" />
           <FeatureCard icon={BarChart2} title="Perilaku Kerja" description="Masih tahap pengembangan" href="/penilaianperilaku" />
-          <FeatureCard icon={BarChart2} title="Rapor Kinerja" description="Masih tahap pengembangan" href={''} />
+          <FeatureCard icon={BarChart3}
+                  title="Rapor Kinerja"
+                  description="Masih tahap pengembangan" 
+                  href="#"
+                  onClick={handleOpenModal}
+                />
         </div>
+        {open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg w-80">
+            
+            <h2 className="text-lg font-bold mb-4">
+              Pilih Periode
+            </h2>
+
+            {/* Tahun */}
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="w-full border p-2 mb-3"
+            >
+              {[2024, 2025, 2026].map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+
+            {/* Bulan */}
+            <select
+              value={month}
+              onChange={(e) => setMonth(Number(e.target.value))}
+              className="w-full border p-2 mb-4"
+            >
+              {Array.from({ length: 12 }).map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setOpen(false)}
+                className="px-3 py-1 border"
+              >
+                Batal
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                className="px-3 py-1 bg-blue-600 text-white"
+              >
+                Lihat
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
       </main>
+       
     </div>
   );
 }

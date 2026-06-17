@@ -219,6 +219,8 @@ export default function LoginClient() {
 
           <p className="text-center text-sm text-gray-600">
             Untuk pendaftaran akun silahkan hubungi admin
+          <br />
+            <Link href="https://scribehow.com/embed-preview/Petunjuk_penggunaan_SMART_PPNPN_role_user__GWjMxAVpTKm7ftCX-dJJVw?as=slides&size=flexible" className="text-[#4A90E2] hover:text-[#003366]"  target="_blank">Pelajari Petunjuk Penggunaan (User Manual)</Link>
           </p>
         </div>
       </div>

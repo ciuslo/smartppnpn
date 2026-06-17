@@ -271,7 +271,7 @@ const handleSubmit = async () => {
           <FeatureCard icon={Briefcase} title="Pengajuan Cuti" description="Ajukan permohonan cuti." href="/pengajuancutipage" />
           <FeatureCard icon={AlertTriangle} title="Pengajuan Izin" description="Ajukan izin tidak hadir atau keperluan mendadak." href="/pengajuanizin" />
           <FeatureCard icon={BarChart2} title="Rekap Absensi" description="Lihat riwayat kehadiran bulanan." href="/rekapabsensi" />
-          <FeatureCard icon={BarChart2} title="Rekap Lembur" description="Lihat riwayat kehadiran bulanan." href="/rekaplembur" />
+          <FeatureCard icon={BarChart2} title="Rekap Lembur" description="Lihat riwayat lembur." href="/rekaplembur" />
           <FeatureCard icon={BarChart2} title="Perilaku Kerja" description="Masih tahap pengembangan" href="/penilaianperilaku" />
           <FeatureCard icon={BarChart3}
                   title="Rapor Kinerja"

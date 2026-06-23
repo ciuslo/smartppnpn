@@ -19,6 +19,7 @@ export default function DashboardLayout({
  const [checking, setChecking] = useState(true);
   const [role, setRole] = useState<string | null>(null);
   const router = useRouter();
+  const useKantor = process.env.NEXT_PUBLIC_KANTOR;
 
   useEffect(() => {
   const checkAuth = async () => {
@@ -101,7 +102,7 @@ export default function DashboardLayout({
           <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm">
             {/* TITLE */}
             <div className="text-sm md:text-base font-bold text-slate-700 tracking-wide">
-              KPPN Lhokseumawe
+              {useKantor}
             </div>
             {/* LOGOUT */}
             <button

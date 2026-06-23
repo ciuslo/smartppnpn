@@ -11,7 +11,7 @@ const SPLASH_DURATION = 1800;
 export default function SplashPage() {
     const router = useRouter()
     const [isChecking, setIsChecking] = useState(true);
-
+    const useKantor = process.env.NEXT_PUBLIC_KANTOR;
     /**
      * Fungsi yang Bertanggung Jawab untuk Mengecek Sesi NYATA Supabase.
      */
@@ -89,7 +89,7 @@ export default function SplashPage() {
                 Sistem Manajemen Akuntabilitas dan Realisasi Kinerja Terintegrasi PPNPN
             </p>
             <p className="mt-2 text-lg text-blue-200">
-                KPPN Lhokseumawe
+                {useKantor}
             </p>
 
             {/* Loading Indicator */}

@@ -15,7 +15,7 @@ export default function Page() {
   const userid = params.userid;
   const tahun = searchParams.get('tahun');
   const semester = searchParams.get('semester');
-
+  const useKantor = process.env.NEXT_PUBLIC_KANTOR;
   const [rapor, setRapor] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -93,7 +93,7 @@ export default function Page() {
           </h2>
 
           <h2 className="font-bold">
-            KPPN LHOKSEUMAWE
+            {useKantor}
           </h2>
 
           <h1 className="text-2xl font-bold mt-6">

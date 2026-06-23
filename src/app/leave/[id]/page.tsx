@@ -43,7 +43,7 @@ export default function LeavePublicPage() {
   const { id } = useParams()
   const [leave, setLeave] = useState<LeaveRequest | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
-
+  const useKantor = process.env.NEXT_puBLIC_KANTOR;
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-'
     try {
@@ -231,7 +231,7 @@ export default function LeavePublicPage() {
                     <tr>
                         <td className="py-1 align-top">Unit Kerja</td>
                         <td className="py-1 align-top">:</td>
-                        <td className="align-top font-bold">KPPN Lhokseumawe</td>
+                        <td className="align-top font-bold">{useKantor}</td>
                     </tr>
                 </tbody>
             </table>

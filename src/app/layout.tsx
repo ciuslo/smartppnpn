@@ -9,7 +9,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Smart PPNPN",
-  description: "Aplikasi Administrasi PPNPN KPPN Lhokseumawe (Pak Ihsan V2)",
+  description: "Aplikasi Administrasi PPNPN (Pak Ihsan V2)",
 };
 
 export default function RootLayout({

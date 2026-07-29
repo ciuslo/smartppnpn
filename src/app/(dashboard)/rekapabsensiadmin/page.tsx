@@ -100,6 +100,7 @@ export default function RekapAbsensiMatrix() {
   const [permissionMap, setPermissionMap] = useState<Map<string, PermissionInfo>>(new Map())
   const [quotaMap, setQuotaMap] = useState<Map<string, number>>(new Map())
   const [holidayMap, setHolidayMap] = useState<Record<string, string>>({})
+  const [securityOffMap, setSecurityOffMap] = useState<Map<string, boolean>>(new Map())
 
   // 2. FETCH DATA
   const fetchData = async () => {
@@ -167,6 +168,24 @@ export default function RekapAbsensiMatrix() {
         }
       } catch (err) {}
       setHolidayMap(dbHolidaysObj)
+
+      const { data: securityOff } = await supabase
+      .from('security_off_schedule')
+      .select(`
+          off_date,
+          security_name
+      `)
+      .gte('off_date', startDateStr)
+      .lte('off_date', endDateStr)
+
+      const tempOffMap = new Map<string, boolean>()
+      securityOff?.forEach((row: any) => {
+          tempOffMap.set(
+              `${row.security_name.trim()}_${row.off_date}`,
+              true
+          );
+      });
+      setSecurityOffMap(tempOffMap)
 
       // --- Processing Data ---
       const tempAttMap = new Map<string, AttendanceInfo[]>()
@@ -340,6 +359,7 @@ export default function RekapAbsensiMatrix() {
         const shifts = attendanceMap.get(key) || []
         let dayLateCount = 0
         let earlyLeave = false
+        let lupaAbsenPulang = false
         let tooltipLines: string[] = []
         const userPos = profile.position?.toUpperCase() || ''
 
@@ -381,7 +401,27 @@ export default function RekapAbsensiMatrix() {
           // =========================
 
           if (checkOutDate) {
+             const selisihHari =
+              Math.floor(
+                (checkOutDate.getTime() - checkInDate.getTime()) /
+                (1000 * 60 * 60 * 24)
+              )
 
+            // Jika checkout lebih dari 1 hari setelah checkin
+            // dianggap lupa absen pulang
+            if (selisihHari > 1) {
+              lupaAbsenPulang = true
+              code = 'P'
+              color = 'bg-sky-200 text-sky-800 font-bold'
+              tooltip =
+                `Lupa Absen Pulang\n` +
+                `Check-in : ${formatDTime(s.checkIn)}\n` +
+                `Check-out : ${formatDTime(s.checkOut)}`
+
+              stats.I++
+
+              return
+            }
             // Total menit checkout
             const checkOutMinutes =
               checkOutDate.getHours() * 60 +
@@ -451,7 +491,10 @@ export default function RekapAbsensiMatrix() {
         })
 
         // === KODE UTAMA ===
-        if (earlyLeave) {
+        if (lupaAbsenPulang) {
+    // jangan lakukan apa-apa
+    // code, color dan tooltip sudah di-set sebelumnya
+        } else if (earlyLeave) {
           code = 'P'
           color = 'bg-orange-500 text-white font-bold'
           tooltip = `Pulang sebelum jam 17:00\n${tooltipLines.join('\n')}`
@@ -464,15 +507,61 @@ export default function RekapAbsensiMatrix() {
           else { code = 'H'; color = 'bg-green-200 text-green-800 border-green-300' }
         }
 
-        if (!earlyLeave) tooltip = `${code === 'H' ? 'Hadir Tepat Waktu' : 'Hadir'}\n${tooltipLines.join('\n')}`
+        if (!earlyLeave && !lupaAbsenPulang) tooltip = `${code === 'H' ? 'Hadir Tepat Waktu' : 'Hadir'}\n${tooltipLines.join('\n')}`
 
         stats.H++
         stats.Sft += shifts.length
         stats.T += dayLateCount
       }
       // ===== LIBUR & WEEKEND =====
-      else if (holidayName) { code = 'L'; color = 'bg-red-600 text-white font-bold'; tooltip = `LIBUR NASIONAL: ${holidayName}` }
-      else if (isWeekend) { code = '-'; color = 'bg-red-500 text-white'; tooltip = 'Akhir Pekan (Sabtu/Minggu)' }
+      // ===== LIBUR NASIONAL =====
+else if (holidayName) {
+  code = 'L'
+  color = 'bg-red-600 text-white font-bold'
+  tooltip = `LIBUR NASIONAL: ${holidayName}`
+}
+
+// ===== KHUSUS SATPAM =====
+else if (profile.position?.toUpperCase().includes('SATPAM')) {
+
+  const satpamOff =
+    securityOffMap.has(`${profile.full_name.trim()}_${dateStr}`)
+
+  const sudahLewat =
+    dateObj < startOfDay(new Date())
+
+  if (satpamOff) {
+
+    code = '-'
+    color = 'bg-red-500 text-white'
+    tooltip = 'Jadwal Off Satpam'
+
+  } else if (sudahLewat) {
+
+    code = 'A'
+    color = 'bg-red-50 text-red-600 font-bold'
+    tooltip = 'Alpha (Satpam tidak masuk pada jadwal kerja)'
+    stats.A++
+
+  } else {
+
+    code = '-'
+    color = 'bg-white'
+    tooltip = 'Belum ada data'
+
+  }
+}
+
+// ===== WEEKEND NON SATPAM =====
+else if (isWeekend) {
+
+  code = '-'
+  color = 'bg-red-500 text-white'
+  tooltip = 'Sabtu / Minggu'
+
+}
+
+// ===== ALPHA PEGAWAI BIASA =====
       else if (isAfter(today, dateObj)) { code = 'A'; color = 'bg-red-50 text-red-600 font-bold'; tooltip = 'Alpha / Tanpa Keterangan'; stats.A++ }
       else { code = '-'; color = 'bg-white'; tooltip = 'Belum ada data' }
 

@@ -412,9 +412,9 @@ export default function RekapAbsensiMatrix() {
             if (selisihHari > 1) {
               lupaAbsenPulang = true
               code = 'P'
-              color = 'bg-sky-200 text-sky-800 font-bold'
+              color = 'bg-red-50 text-red-600 font-bold'
               tooltip =
-                `Lupa Absen Pulang\n` +
+                `Presensi tidak sesuai ketentuan\n` +
                 `Check-in : ${formatDTime(s.checkIn)}\n` +
                 `Check-out : ${formatDTime(s.checkOut)}`
 
@@ -496,8 +496,8 @@ export default function RekapAbsensiMatrix() {
     // code, color dan tooltip sudah di-set sebelumnya
         } else if (earlyLeave) {
           code = 'P'
-          color = 'bg-orange-500 text-white font-bold'
-          tooltip = `Pulang sebelum jam 17:00\n${tooltipLines.join('\n')}`
+          color = 'bg-red-50 text-red-600 font-bold'
+          tooltip = `Presensi tidak sesuai, Pulang sebelum jam 17:00\n${tooltipLines.join('\n')}`
         } else if (shifts.length > 1) {
           if (dayLateCount === 1) { code = '2T¹'; color = 'bg-yellow-600 text-white font-bold' }
           else if (dayLateCount >= 2) { code = '2T²'; color = 'bg-orange-700 text-white font-bold' }
@@ -1080,16 +1080,16 @@ const getCellColor = (code: string, isWeekendOrHoliday: boolean) => {
     <span className="w-4 h-4 rounded bg-pink-200 border border-pink-300 inline-block"></span> Lupa absen masuk (LAM)
   </div>
 
-  <div className="flex items-center gap-1.5">
+  {/* <div className="flex items-center gap-1.5">
     <span className="w-4 h-4 rounded bg-emerald-200 border border-emerald-300 inline-block"></span> Lupa absen masuk LAM(P)
-  </div>
+  </div> */}
 
   <div className="flex items-center gap-1.5">
     <span className="w-4 h-4 rounded bg-sky-200 border border-sky-300 inline-block"></span> Lupa absen pulang (LAP)
   </div>
 
   <div className="flex items-center gap-1.5">
-    <span className="w-4 h-4 rounded bg-rose-100 border border-rose-200 inline-block"></span> Lupa absen pulang LAP(P)
+    <span className="w-4 h-4 rounded bg-rose-100 border border-rose-200 inline-block"></span> Presensi Tidak Sesuai - Potong (P)
   </div>
 </div>
 </div>

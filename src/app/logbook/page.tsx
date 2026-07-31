@@ -337,12 +337,12 @@ export default function LogbookPage() {
               <select
                 value={selectedTask}
                 onChange={(e) => setSelectedTask(e.target.value)}
-                className="flex-grow border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-100 outline-none transition"
+                className="flex-1 min-w-0 border border-gray-300 rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-100 outline-none transition"
               >
                 <option value="">-- Pilih tugas rutin --</option>
                 {standardTasks.map((t, i) => <option key={i}>{t}</option>)}
               </select>
-              <button type="button" onClick={addTask} className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg transition shadow-md flex items-center justify-center min-w-[50px]">
+               <button type="button" onClick={addTask} className="flex-shrink-0 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg transition shadow-md flex items-center justify-center min-w-[50px]">
                 <Plus size={20} />
               </button>
             </div>

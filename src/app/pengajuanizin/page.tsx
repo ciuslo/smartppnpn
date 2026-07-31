@@ -210,7 +210,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       <Card className="mb-8 shadow-sm border border-gray-200">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl font-semibold text-gray-800">
-            Formulir Pengajuan Izin
+            Formulir Pengajuan Izin (diajukan maksimal 3 Hari Kerja setelah ijin informal)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -237,7 +237,12 @@ const handleSubmit = async (e: React.FormEvent) => {
               <div>
                 <label className="font-medium">Tanggal Mulai</label>
                 <input type="date" className="w-full border p-2 rounded-md focus:ring-2 focus:ring-blue-500"
-                       value={tanggalMulai} onChange={(e) => setTanggalMulai(e.target.value)} />
+                      value={tanggalMulai} 
+                      min={new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                        .toISOString()
+                        .split('T')[0]}
+                     onChange={(e) => setTanggalMulai(e.target.value)} />
+                
               </div>
               <div>
                 <label className="font-medium">Tanggal Selesai</label>

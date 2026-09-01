@@ -10,7 +10,8 @@ import {
   TrendingUp,
   BookOpenCheck,
   FilterX,
-  CalendarDays
+  CalendarDays,
+  Plane
 } from 'lucide-react'
 
 import { useRouter } from 'next/navigation'

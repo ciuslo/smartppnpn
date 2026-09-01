@@ -268,6 +268,7 @@ const handleSubmit = async () => {
         <div className="space-y-4">
           <FeatureCard icon={FileText} title="Logbook" description="Catat detail aktivitas harian Anda." href="/logbook" />
           <FeatureCard icon={FileText} title="Absen Lembur" description="Catat detail aktivitas harian Anda." href="/lembur" />
+          <FeatureCard icon={Briefcase} title="Perjalanan Dinas" description="Catat perjalanan dinas dan presensi di setiap tahap." href="/perjalanandinas"/>
           <FeatureCard icon={Briefcase} title="Pengajuan Cuti" description="Ajukan permohonan cuti." href="/pengajuancutipage" />
           <FeatureCard icon={AlertTriangle} title="Pengajuan Izin" description="Ajukan izin tidak hadir atau keperluan mendadak." href="/pengajuanizin" />
           <FeatureCard icon={BarChart2} title="Rekap Absensi" description="Lihat riwayat kehadiran bulanan." href="/rekapabsensi" />

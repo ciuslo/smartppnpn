@@ -163,7 +163,10 @@ export default function Sidebar() {
           <FileClock size={22} className="min-w-max text-blue-200 group-hover:text-white" />
           <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Rekap Lembur Matrix</span>
         </Link>
-
+        <Link href="/rekapperjadin" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
+          <UserSearch size={22} className="min-w-max text-blue-200 group-hover:text-white" />
+          <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Detail Perjadin</span>
+        </Link>
         <Link href="/detailabsensipegawai" className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-800/80 transition-colors group">
           <UserSearch size={22} className="min-w-max text-blue-200 group-hover:text-white" />
           <span className={`${!isOpen && "hidden"} text-sm font-medium whitespace-nowrap`}>Detail Absensi Individu</span>

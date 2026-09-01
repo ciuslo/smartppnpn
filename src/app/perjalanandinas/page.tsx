@@ -295,7 +295,10 @@ export default function PerjalananDinasPage() {
   // =====================================
   // START PERJALANAN
   // =====================================
-  const handleStart = async () => {
+  // =====================================
+// START PERJALANAN
+// =====================================
+const handleStart = async () => {
     if (!userId) {
       return toast.error('User belum ditemukan. Silakan login ulang.');
     }
@@ -340,11 +343,13 @@ export default function PerjalananDinasPage() {
       const photoUrl = publicUrlData.publicUrl;
       const now = new Date().toISOString();
 
+      // TANGGAL PERJALANAN OTOMATIS DARI DATABASE
+      // trip_date tidak perlu dikirim karena tabel sudah memiliki
+      // DEFAULT CURRENT_DATE
       const { data, error: dbError } = await supabase
         .from('business_trip_attendances')
         .insert({
           user_id: userId,
-          trip_date: now.split('T')[0],
           destination: destination,
           purpose: purpose,
           start_at: now,
@@ -354,7 +359,7 @@ export default function PerjalananDinasPage() {
           start_photo_url: photoUrl,
           status: 'ongoing',
         })
-        .select('id')
+        .select('id, trip_date')
         .single();
 
       if (dbError) {
@@ -431,6 +436,7 @@ export default function PerjalananDinasPage() {
             clock_in_latitude: location.lat,
             clock_in_longitude: location.lon,
             clock_in_photo_url: photoUrl,
+            clock_in_address: address,
           })
           .eq('id', tripId);
 
@@ -442,6 +448,7 @@ export default function PerjalananDinasPage() {
           clock_in_latitude: location.lat,
           clock_in_longitude: location.lon,
           clock_in_photo_url: photoUrl,
+          clock_in_address: address,
         }));
 
         setCurrentStage('CLOCK OUT');
@@ -464,6 +471,7 @@ export default function PerjalananDinasPage() {
           clock_out_latitude: location.lat,
           clock_out_longitude: location.lon,
           clock_out_photo_url: photoUrl,
+          clock_out_address: address,
         }));
 
         setCurrentStage('END');
@@ -475,6 +483,7 @@ export default function PerjalananDinasPage() {
             end_latitude: location.lat,
             end_longitude: location.lon,
             end_photo_url: photoUrl,
+            end_address: address,
             status: 'completed',
             updated_at: now,
           })
@@ -507,7 +516,7 @@ export default function PerjalananDinasPage() {
 
   const getButtonText = () => {
     if (currentStage === 'START') return 'START PERJALANAN';
-    if (currentStage === 'CLOCK IN') return 'CLOCK IN DI TUJUAN';
+    if (currentStage === 'CLOCK IN') return 'CLOCK IN KEGIATAN';
     if (currentStage === 'CLOCK OUT') return 'CLOCK OUT';
     return 'END PERJALANAN';
   };

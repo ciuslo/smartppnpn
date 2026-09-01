@@ -25,18 +25,25 @@ interface TripData {
   start_at?: string;
   start_latitude?: number;
   start_longitude?: number;
+  start_address?: string;
+
   clock_in_photo_url?: string;
   clock_in_at?: string;
   clock_in_latitude?: number;
   clock_in_longitude?: number;
+  clock_in_address?: string;
+
   clock_out_photo_url?: string;
   clock_out_at?: string;
   clock_out_latitude?: number;
   clock_out_longitude?: number;
+  clock_out_address?: string;
+
   end_photo_url?: string;
   end_at?: string;
   end_latitude?: number;
   end_longitude?: number;
+  end_address?: string;
 }
 
 // HELPER: Konversi Base64 ke Blob secara langsung & stabil di HP/Vercel
@@ -45,14 +52,17 @@ const base64ToBlob = (base64Data: string): Blob => {
   const contentType = parts[0].split(':')[1] || 'image/jpeg';
   const raw = window.atob(parts[1]);
   const uInt8Array = new Uint8Array(raw.length);
+
   for (let i = 0; i < raw.length; ++i) {
     uInt8Array[i] = raw.charCodeAt(i);
   }
+
   return new Blob([uInt8Array], { type: contentType });
 };
 
 export default function PerjalananDinasPage() {
   const router = useRouter();
+
   const [userId, setUserId] = useState<string | null>(null);
   const [destination, setDestination] = useState('');
   const [purpose, setPurpose] = useState('');
@@ -65,6 +75,11 @@ export default function PerjalananDinasPage() {
   const [historyList, setHistoryList] = useState<any[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
+  // 🔵 TAMBAHAN:
+  // Jika true berarti user sudah menyelesaikan perjalanan hari ini
+  // sehingga tidak boleh membuat perjalanan kedua.
+  const [isDayLocked, setIsDayLocked] = useState(false);
+
   const [location, setLocation] = useState<{
     lat: number;
     lon: number;
@@ -75,6 +90,7 @@ export default function PerjalananDinasPage() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tripId, setTripId] = useState<string | null>(null);
+
   const [previewPhoto, setPreviewPhoto] = useState<{
     title: string;
     url: string;
@@ -84,6 +100,20 @@ export default function PerjalananDinasPage() {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // =====================================
+  // 🔵 TAMBAHAN:
+  // MENGAMBIL TANGGAL LOKAL INDONESIA
+  // =====================================
+  const getLocalDate = () => {
+    const now = new Date();
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  };
 
   const fetchHistory = async (uid: string) => {
     const { data, error } = await supabase
@@ -95,6 +125,140 @@ export default function PerjalananDinasPage() {
     if (!error && data) {
       setHistoryList(data);
     }
+  };
+
+  // =====================================
+  // 🔵 TAMBAHAN:
+  // CEK PERJALANAN HARI INI
+  //
+  // Fungsi ini yang membuat browser boleh
+  // ditutup/reload dan kemudian melanjutkan.
+  // =====================================
+  const loadTodayTrip = async (uid: string) => {
+    const today = getLocalDate();
+
+    const { data, error } = await supabase
+      .from('business_trip_attendances')
+      .select(`
+        id,
+        trip_date,
+        destination,
+        purpose,
+        status,
+
+        start_at,
+        start_latitude,
+        start_longitude,
+        start_address,
+        start_photo_url,
+
+        clock_in_at,
+        clock_in_latitude,
+        clock_in_longitude,
+        clock_in_address,
+        clock_in_photo_url,
+
+        clock_out_at,
+        clock_out_latitude,
+        clock_out_longitude,
+        clock_out_address,
+        clock_out_photo_url,
+
+        end_at,
+        end_latitude,
+        end_longitude,
+        end_address,
+        end_photo_url
+      `)
+      .eq('user_id', uid)
+      .eq('trip_date', today)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Gagal mengambil perjalanan hari ini:', error);
+      return;
+    }
+
+    // =====================================
+    // BELUM ADA PERJALANAN HARI INI
+    // =====================================
+    if (!data) {
+      setTripId(null);
+      setTrip(null);
+      setCurrentStage('START');
+      setIsDayLocked(false);
+      return;
+    }
+
+    // =====================================
+    // SIMPAN DATA TRIP
+    // =====================================
+    setTripId(data.id);
+
+    setTrip({
+      start_at: data.start_at,
+      start_latitude: data.start_latitude,
+      start_longitude: data.start_longitude,
+      start_address: data.start_address,
+      start_photo_url: data.start_photo_url,
+
+      clock_in_at: data.clock_in_at,
+      clock_in_latitude: data.clock_in_latitude,
+      clock_in_longitude: data.clock_in_longitude,
+      clock_in_address: data.clock_in_address,
+      clock_in_photo_url: data.clock_in_photo_url,
+
+      clock_out_at: data.clock_out_at,
+      clock_out_latitude: data.clock_out_latitude,
+      clock_out_longitude: data.clock_out_longitude,
+      clock_out_address: data.clock_out_address,
+      clock_out_photo_url: data.clock_out_photo_url,
+
+      end_at: data.end_at,
+      end_latitude: data.end_latitude,
+      end_longitude: data.end_longitude,
+      end_address: data.end_address,
+      end_photo_url: data.end_photo_url,
+    });
+
+    // Isi kembali tujuan & keperluan
+    setDestination(data.destination || '');
+    setPurpose(data.purpose || '');
+
+    // =====================================
+    // JIKA SUDAH SELESAI
+    // =====================================
+    if (data.status === 'completed') {
+      setIsDayLocked(true);
+      setCurrentStage('END');
+
+      toast.error(
+        'Anda sudah menyelesaikan perjalanan dinas hari ini. Tidak dapat membuat perjalanan kedua.'
+      );
+
+      return;
+    }
+
+    // =====================================
+    // JIKA MASIH ONGOING
+    // TENTUKAN TAHAP TERAKHIR
+    // =====================================
+
+    if (!data.start_at) {
+      setCurrentStage('START');
+    } else if (!data.clock_in_at) {
+      setCurrentStage('CLOCK IN');
+    } else if (!data.clock_out_at) {
+      setCurrentStage('CLOCK OUT');
+    } else if (!data.end_at) {
+      setCurrentStage('END');
+    }
+
+    setIsDayLocked(false);
+
+    toast.success(
+      'Perjalanan dinas sebelumnya ditemukan. Proses dilanjutkan.'
+    );
   };
 
   // =====================================
@@ -113,7 +277,12 @@ export default function PerjalananDinasPage() {
       }
 
       setUserId(user.id);
+
       fetchHistory(user.id);
+
+      // 🔵 TAMBAHAN:
+      // Saat halaman dibuka/reload, cari perjalanan hari ini.
+      await loadTodayTrip(user.id);
     };
 
     getUser();
@@ -287,6 +456,7 @@ export default function PerjalananDinasPage() {
     setCameraOpen(false);
 
     const stream = video.srcObject as MediaStream;
+
     stream?.getTracks().forEach((track) => {
       track.stop();
     });
@@ -295,12 +465,18 @@ export default function PerjalananDinasPage() {
   // =====================================
   // START PERJALANAN
   // =====================================
-  // =====================================
-// START PERJALANAN
-// =====================================
-const handleStart = async () => {
+  const handleStart = async () => {
     if (!userId) {
       return toast.error('User belum ditemukan. Silakan login ulang.');
+    }
+
+    // 🔵 TAMBAHAN:
+    // Jangan izinkan START baru kalau hari ini sudah ada
+    // perjalanan yang selesai.
+    if (isDayLocked) {
+      return toast.error(
+        'Anda sudah menyelesaikan perjalanan dinas hari ini.'
+      );
     }
 
     if (!destination.trim()) {
@@ -322,6 +498,41 @@ const handleStart = async () => {
     setIsSubmitting(true);
 
     try {
+      // 🔵 TAMBAHAN:
+      // Cek ulang ke database sebelum INSERT.
+      // Ini penting supaya tidak terjadi double submit.
+      const today = getLocalDate();
+
+      const { data: existingTrip, error: checkError } = await supabase
+        .from('business_trip_attendances')
+        .select('id, status')
+        .eq('user_id', userId)
+        .eq('trip_date', today)
+        .maybeSingle();
+
+      if (checkError) {
+        throw new Error(
+          `Gagal memeriksa perjalanan hari ini: ${checkError.message}`
+        );
+      }
+
+      if (existingTrip) {
+        if (existingTrip.status === 'completed') {
+          setIsDayLocked(true);
+
+          throw new Error(
+            'Anda sudah menyelesaikan perjalanan dinas hari ini. Tidak dapat membuat perjalanan kedua.'
+          );
+        }
+
+        // Kalau ternyata ongoing, jangan buat record baru.
+        await loadTodayTrip(userId);
+
+        throw new Error(
+          'Anda sudah memiliki perjalanan dinas yang sedang berjalan hari ini. Proses dilanjutkan dari tahap terakhir.'
+        );
+      }
+
       const blob = base64ToBlob(photo);
       const fileName = `${userId}_start_${Date.now()}.jpg`;
 
@@ -344,8 +555,6 @@ const handleStart = async () => {
       const now = new Date().toISOString();
 
       // TANGGAL PERJALANAN OTOMATIS DARI DATABASE
-      // trip_date tidak perlu dikirim karena tabel sudah memiliki
-      // DEFAULT CURRENT_DATE
       const { data, error: dbError } = await supabase
         .from('business_trip_attendances')
         .insert({
@@ -372,11 +581,16 @@ const handleStart = async () => {
         start_at: now,
         start_latitude: location.lat,
         start_longitude: location.lon,
+        start_address: address,
         start_photo_url: photoUrl,
       });
 
       setCurrentStage('CLOCK IN');
       setPhoto(null);
+
+      // 🔵 TAMBAHAN:
+      // Refresh riwayat setelah START
+      fetchHistory(userId);
 
       toast.success('START perjalanan berhasil.');
     } catch (error: any) {
@@ -460,6 +674,7 @@ const handleStart = async () => {
             clock_out_latitude: location.lat,
             clock_out_longitude: location.lon,
             clock_out_photo_url: photoUrl,
+            clock_out_address: address,
           })
           .eq('id', tripId);
 
@@ -497,7 +712,14 @@ const handleStart = async () => {
           end_latitude: location.lat,
           end_longitude: location.lon,
           end_photo_url: photoUrl,
+          end_address: address,
         }));
+
+        // 🔵 TAMBAHAN:
+        // Kunci perjalanan hari ini setelah END.
+        setIsDayLocked(true);
+
+        fetchHistory(userId!);
 
         toast.success('Perjalanan dinas selesai.');
         router.push('/dashboard');
@@ -540,9 +762,53 @@ const handleStart = async () => {
       </header>
 
       <main className="p-6 max-w-2xl mx-auto">
+
+        {/* 🔵 TAMBAHAN:
+            INFORMASI JIKA PERJALANAN HARI INI SUDAH SELESAI */}
+        {isDayLocked && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl mb-5">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" />
+
+              <div>
+                <p className="font-bold text-sm">
+                  Perjalanan Dinas Hari Ini Sudah Selesai
+                </p>
+
+                <p className="text-xs mt-1">
+                  Anda hanya dapat melakukan satu perjalanan dinas
+                  dalam satu hari. Perjalanan berikutnya dapat dimulai
+                  pada tanggal berikutnya.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 🔵 TAMBAHAN:
+            INFORMASI JIKA PERJALANAN MASIH BERJALAN */}
+        {!isDayLocked && currentStage !== 'START' && tripId && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl mb-5">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" />
+
+              <div>
+                <p className="font-bold text-sm">
+                  Perjalanan Dinas Sedang Berjalan
+                </p>
+
+                <p className="text-xs mt-1">
+                  Sistem menemukan perjalanan dinas Anda hari ini.
+                  Silakan lanjutkan pada tahap{' '}
+                  <strong>{currentStage}</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* KARTU RIWAYAT PERJALANAN DINAS (COLLAPSIBLE) */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
-          {/* Header Tombol Dropdown */}
           <button
             type="button"
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
@@ -559,6 +825,7 @@ const handleStart = async () => {
               <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
                 Total: {historyList.length}
               </span>
+
               {isHistoryOpen ? (
                 <ChevronUp className="w-5 h-5 text-gray-500" />
               ) : (
@@ -567,7 +834,6 @@ const handleStart = async () => {
             </div>
           </button>
 
-          {/* Isi List Riwayat */}
           {isHistoryOpen && (
             <div className="mt-4 space-y-3">
               {historyList.length === 0 ? (
@@ -597,8 +863,10 @@ const handleStart = async () => {
                             ? 'Selesai'
                             : 'Berjalan'}
                         </span>
+
                         <span className="text-xs text-gray-500 flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
+
                           {item.trip_date
                             ? new Date(item.trip_date).toLocaleDateString(
                                 'id-ID',
@@ -641,11 +909,14 @@ const handleStart = async () => {
         </div>
 
         {/* INFORMASI PERJALANAN */}
-        {currentStage === 'START' && (
+        {currentStage === 'START' && !isDayLocked && (
           <div className="bg-white p-5 rounded-xl shadow mb-5">
-            <h2 className="font-bold text-lg mb-4">Informasi Perjalanan</h2>
+            <h2 className="font-bold text-lg mb-4">
+              Informasi Perjalanan
+            </h2>
 
             <label className="font-semibold text-sm">Tujuan</label>
+
             <input
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
@@ -654,6 +925,7 @@ const handleStart = async () => {
             />
 
             <label className="font-semibold text-sm">Keperluan</label>
+
             <textarea
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
@@ -668,6 +940,7 @@ const handleStart = async () => {
         <div className="bg-white p-6 rounded-xl shadow mb-5">
           <h2 className="font-bold text-gray-800 mb-5 flex items-center justify-between">
             <span>Status Perjalanan</span>
+
             <span className="text-xs font-normal text-gray-500">
               Klik foto untuk memperbesar
             </span>
@@ -677,12 +950,18 @@ const handleStart = async () => {
           <div className="relative pl-6 border-l-2 border-blue-100 space-y-6 ml-2">
             {STAGES.map((stage, index) => {
               const currentIndex = STAGES.indexOf(currentStage);
+
               const isCompleted = index < currentIndex;
               const isActive = stage === currentStage;
 
               const stagePhotoMap: Record<
                 string,
-                { url?: string; time?: string; lat?: number; lng?: number }
+                {
+                  url?: string;
+                  time?: string;
+                  lat?: number;
+                  lng?: number;
+                }
               > = {
                 START: {
                   url: trip?.start_photo_url,
@@ -690,18 +969,21 @@ const handleStart = async () => {
                   lat: trip?.start_latitude,
                   lng: trip?.start_longitude,
                 },
+
                 'CLOCK IN': {
                   url: trip?.clock_in_photo_url,
                   time: trip?.clock_in_at,
                   lat: trip?.clock_in_latitude,
                   lng: trip?.clock_in_longitude,
                 },
+
                 'CLOCK OUT': {
                   url: trip?.clock_out_photo_url,
                   time: trip?.clock_out_at,
                   lat: trip?.clock_out_latitude,
                   lng: trip?.clock_out_longitude,
                 },
+
                 END: {
                   url: trip?.end_photo_url,
                   time: trip?.end_at,
@@ -755,12 +1037,14 @@ const handleStart = async () => {
                           {stage}
                         </span>
 
-                        {/* WAKTU SUBMIT */}
                         {isCompleted && stageData?.time && (
                           <p className="text-[11px] text-gray-500 mt-0.5">
                             {new Date(stageData.time).toLocaleTimeString(
                               'id-ID',
-                              { hour: '2-digit', minute: '2-digit' }
+                              {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }
                             )}{' '}
                             WIB
                           </p>
@@ -776,9 +1060,9 @@ const handleStart = async () => {
                               title: stage,
                               url: stageData.url!,
                               date: stageData.time
-                                ? new Date(stageData.time).toLocaleString(
-                                    'id-ID'
-                                  )
+                                ? new Date(
+                                    stageData.time
+                                  ).toLocaleString('id-ID')
                                 : undefined,
                               coord:
                                 stageData.lat && stageData.lng
@@ -796,6 +1080,7 @@ const handleStart = async () => {
                             alt={stage}
                             className="w-full h-full object-cover"
                           />
+
                           <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition text-white text-[10px] font-medium">
                             Lihat
                           </div>
@@ -821,6 +1106,7 @@ const handleStart = async () => {
                 <h4 className="font-bold text-sm text-gray-800">
                   Foto Presensi: {previewPhoto.title}
                 </h4>
+
                 <button
                   type="button"
                   onClick={() => setPreviewPhoto(null)}
@@ -829,19 +1115,25 @@ const handleStart = async () => {
                   ✕
                 </button>
               </div>
+
               <div className="relative bg-black">
                 <img
                   src={previewPhoto.url}
                   alt={previewPhoto.title}
                   className="w-full h-64 object-cover"
                 />
+
                 <div className="absolute bottom-0 inset-x-0 bg-black/75 text-white p-2.5 text-xs">
-                  <p className="font-bold text-blue-400">SMART PPNPN</p>
+                  <p className="font-bold text-blue-400">
+                    SMART PPNPN
+                  </p>
+
                   {previewPhoto.date && (
                     <p className="text-[11px] text-gray-200">
                       {previewPhoto.date}
                     </p>
                   )}
+
                   {previewPhoto.coord && (
                     <p className="text-[11px] text-gray-300">
                       {previewPhoto.coord}
@@ -849,6 +1141,7 @@ const handleStart = async () => {
                   )}
                 </div>
               </div>
+
               <div className="p-2.5 text-right bg-gray-50">
                 <button
                   type="button"
@@ -886,80 +1179,85 @@ const handleStart = async () => {
         </div>
 
         {/* CAMERA */}
-        <div className="bg-white p-5 rounded-xl shadow mb-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Camera size={20} />
-            <h2 className="font-bold">Foto Presensi</h2>
+        {!isDayLocked && (
+          <div className="bg-white p-5 rounded-xl shadow mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Camera size={20} />
+              <h2 className="font-bold">Foto Presensi</h2>
+            </div>
+
+            {!photo && !cameraOpen && (
+              <button
+                onClick={openCamera}
+                className="bg-green-600 text-white px-4 py-3 rounded-lg text-sm"
+              >
+                Buka Kamera
+              </button>
+            )}
+
+            {cameraOpen && (
+              <div>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  controls={false}
+                  className="w-full rounded-lg bg-black"
+                  style={{
+                    width: '100%',
+                    minHeight: '300px',
+                    objectFit: 'cover',
+                  }}
+                />
+
+                <button
+                  onClick={capturePhoto}
+                  className="mt-3 bg-blue-900 text-white px-4 py-3 rounded-lg text-sm w-full"
+                >
+                  Ambil Foto
+                </button>
+              </div>
+            )}
+
+            {photo && (
+              <div>
+                <img
+                  src={photo}
+                  alt="Preview"
+                  className="w-full rounded-lg"
+                />
+
+                <button
+                  onClick={() => {
+                    setPhoto(null);
+                    openCamera();
+                  }}
+                  className="mt-3 bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm"
+                >
+                  Ambil Ulang
+                </button>
+              </div>
+            )}
+
+            <canvas ref={canvasRef} className="hidden" />
           </div>
-
-          {!photo && !cameraOpen && (
-            <button
-              onClick={openCamera}
-              className="bg-green-600 text-white px-4 py-3 rounded-lg text-sm"
-            >
-              Buka Kamera
-            </button>
-          )}
-
-          {cameraOpen && (
-            <div>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                controls={false}
-                className="w-full rounded-lg bg-black"
-                style={{
-                  width: '100%',
-                  minHeight: '300px',
-                  objectFit: 'cover',
-                }}
-              />
-              <button
-                onClick={capturePhoto}
-                className="mt-3 bg-blue-900 text-white px-4 py-3 rounded-lg text-sm w-full"
-              >
-                Ambil Foto
-              </button>
-            </div>
-          )}
-
-          {photo && (
-            <div>
-              <img
-                src={photo}
-                alt="Preview"
-                className="w-full rounded-lg"
-              />
-
-              <button
-                onClick={() => {
-                  setPhoto(null);
-                  openCamera();
-                }}
-                className="mt-3 bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm"
-              >
-                Ambil Ulang
-              </button>
-            </div>
-          )}
-
-          <canvas ref={canvasRef} className="hidden" />
-        </div>
+        )}
 
         {/* SUBMIT */}
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className={`w-full py-4 rounded-xl text-white font-bold transition ${
-            isSubmitting
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-900 hover:bg-blue-800'
-          }`}
-        >
-          {isSubmitting ? 'Memproses...' : getButtonText()}
-        </button>
+        {!isDayLocked && (
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={`w-full py-4 rounded-xl text-white font-bold transition ${
+              isSubmitting
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-900 hover:bg-blue-800'
+            }`}
+          >
+            {isSubmitting ? 'Memproses...' : getButtonText()}
+          </button>
+        )}
       </main>
     </div>
   );

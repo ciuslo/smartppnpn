@@ -690,7 +690,7 @@ export default function PerjalananDinasPage() {
         }));
 
         setCurrentStage('END');
-      } else if (currentStage === 'END') {
+     } else if (currentStage === 'END') {
         const { error } = await supabase
           .from('business_trip_attendances')
           .update({
@@ -715,14 +715,14 @@ export default function PerjalananDinasPage() {
           end_address: address,
         }));
 
-        // 🔵 TAMBAHAN:
-        // Kunci perjalanan hari ini setelah END.
-        setIsDayLocked(true);
-
-        fetchHistory(userId!);
+        // PERJALANAN SUDAH SELESAI
+        setCurrentStage('END');
+        setPhoto(null);
 
         toast.success('Perjalanan dinas selesai.');
-        router.push('/dashboard');
+
+        // JANGAN redirect ke dashboard.
+        // Biarkan user melihat hasil END dan foto.
         return;
       }
 
@@ -950,9 +950,10 @@ export default function PerjalananDinasPage() {
           <div className="relative pl-6 border-l-2 border-blue-100 space-y-6 ml-2">
             {STAGES.map((stage, index) => {
               const currentIndex = STAGES.indexOf(currentStage);
-
-              const isCompleted = index < currentIndex;
-              const isActive = stage === currentStage;
+              // END dianggap selesai kalau end_at sudah tersimpan
+              const isEndCompleted = stage === 'END' && !!trip?.end_at;
+              const isCompleted =   index < currentIndex || isEndCompleted;
+              const isActive =  stage === currentStage && !isEndCompleted;
 
               const stagePhotoMap: Record<
                 string,
